@@ -1,0 +1,205 @@
+"use client";
+
+import { useMemo } from "react";
+
+import { formatPriceIDR } from "@/lib/format";
+import type { RequiredInfoField } from "@/lib/partner-api";
+
+import { MinusIcon, PlusIcon } from "@/components/icon";
+
+type OrderSummaryCardProps = {
+  productName: string;
+  productSubtitle?: string | null;
+  productImageUrl?: string | null;
+  unitPrice: number;
+  quantity: number;
+  maxQuantity?: number;
+  onQuantityChange: (next: number) => void;
+  /** Schema for the buyer-provided fields, from /partner/v1/product/required-info. */
+  requiredInfoFields: RequiredInfoField[];
+  /** Currently loading the schema. */
+  requiredInfoLoading?: boolean;
+  /** Current values, keyed by `field_name`. */
+  requiredInfoValues: Record<string, string>;
+  onRequiredInfoChange: (fieldName: string, value: string) => void;
+  /** Per-field error messages, keyed by `field_name`. */
+  requiredInfoErrors?: Record<string, string>;
+};
+
+export function OrderSummaryCard({
+  productName,
+  productSubtitle,
+  productImageUrl,
+  unitPrice,
+  quantity,
+  maxQuantity,
+  onQuantityChange,
+  requiredInfoFields,
+  requiredInfoLoading = false,
+  requiredInfoValues,
+  onRequiredInfoChange,
+  requiredInfoErrors,
+}: OrderSummaryCardProps) {
+  const decDisabled = quantity <= 1;
+  const incDisabled = maxQuantity !== undefined && quantity >= maxQuantity;
+
+  return (
+    <section className="flex w-full flex-col gap-3">
+      <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
+        Pesanan Kamu
+      </h2>
+      <div className="flex w-full flex-col gap-4 rounded-2xl border border-(--color-border-low) bg-white p-6">
+        <div className="flex items-center gap-6">
+          <div className="flex min-w-0 flex-1 items-start gap-3">
+            <div className="size-12 shrink-0 overflow-hidden rounded-lg border border-(--color-border) bg-(--color-bg-subtle)">
+              {productImageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={productImageUrl}
+                  alt=""
+                  className="size-full object-cover"
+                  loading="lazy"
+                />
+              ) : null}
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <p className="font-[family-name:var(--font-heading)] truncate text-base font-bold leading-6 text-(--color-text-title)">
+                {productName}
+              </p>
+              {productSubtitle && (
+                <p className="font-[family-name:var(--font-heading)] truncate text-sm leading-5 text-(--color-text-subdued)">
+                  {productSubtitle}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <p className="font-[family-name:var(--font-heading)] whitespace-nowrap text-right text-base font-bold leading-6 text-(--color-text-title)">
+              {formatPriceIDR(unitPrice)}
+            </p>
+            <div className="flex h-11 w-[160px] items-stretch">
+              <button
+                type="button"
+                aria-label="Kurangi jumlah"
+                disabled={decDisabled}
+                onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
+                className="flex size-11 items-center justify-center rounded-l-2xl border border-r-0 border-(--color-border) bg-white text-(--color-text-body) transition disabled:cursor-not-allowed disabled:opacity-40 hover:bg-(--color-bg-subtle)"
+              >
+                <MinusIcon className="size-6" />
+              </button>
+              <input
+                type="number"
+                min={1}
+                max={maxQuantity}
+                value={quantity}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  if (!Number.isFinite(n) || n < 1) return;
+                  onQuantityChange(maxQuantity ? Math.min(maxQuantity, n) : n);
+                }}
+                className="h-11 w-full appearance-none border-y border-(--color-border) bg-white text-center text-base leading-6 text-(--color-text-body) outline-none focus:border-(--color-brand) [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                aria-label="Jumlah"
+              />
+              <button
+                type="button"
+                aria-label="Tambah jumlah"
+                disabled={incDisabled}
+                onClick={() =>
+                  onQuantityChange(maxQuantity ? Math.min(maxQuantity, quantity + 1) : quantity + 1)
+                }
+                className="flex size-11 items-center justify-center rounded-r-2xl border border-l-0 border-(--color-border) bg-white text-(--color-text-body) transition disabled:cursor-not-allowed disabled:opacity-40 hover:bg-(--color-bg-subtle)"
+              >
+                <PlusIcon className="size-6" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {requiredInfoLoading ? (
+          <div className="h-11 w-full max-w-[410px] animate-pulse rounded-2xl bg-(--color-bg-subtle)" />
+        ) : (
+          requiredInfoFields.length > 0 && (
+            <div className="flex flex-col gap-4">
+              {requiredInfoFields.map((field) => (
+                <RequiredInfoInput
+                  key={field.id}
+                  field={field}
+                  value={requiredInfoValues[field.field_name] ?? ""}
+                  onChange={(v) => onRequiredInfoChange(field.field_name, v)}
+                  error={requiredInfoErrors?.[field.field_name]}
+                />
+              ))}
+            </div>
+          )
+        )}
+      </div>
+    </section>
+  );
+}
+
+function RequiredInfoInput({
+  field,
+  value,
+  onChange,
+  error,
+}: {
+  field: RequiredInfoField;
+  value: string;
+  onChange: (next: string) => void;
+  error?: string;
+}) {
+  const dropdownOptions = useMemo(() => parseDropdown(field.dropdown_options), [
+    field.dropdown_options,
+  ]);
+  const isDropdown = field.is_dropdown === 1 && dropdownOptions.length > 0;
+
+  return (
+    <label className="flex max-w-[410px] flex-col gap-1">
+      <span className="font-[family-name:var(--font-heading)] text-sm leading-5 text-(--color-text-secondary)">
+        {field.name}
+      </span>
+      {isDropdown ? (
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-invalid={error ? true : undefined}
+          className="h-11 w-full rounded-2xl border border-(--color-border) bg-(--color-surface) px-3 text-base leading-6 text-(--color-text-body) outline-none focus:border-(--color-brand)"
+        >
+          <option value="" disabled>
+            {field.placeholder || `Pilih ${field.name.toLowerCase()}`}
+          </option>
+          {dropdownOptions.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder}
+          aria-invalid={error ? true : undefined}
+          className="h-11 w-full rounded-2xl border border-(--color-border) bg-(--color-surface) px-3 text-base leading-6 text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none focus:border-(--color-brand)"
+        />
+      )}
+      {error && (
+        <span role="alert" className="text-xs leading-4 text-(--color-promotion)">
+          {error}
+        </span>
+      )}
+    </label>
+  );
+}
+
+function parseDropdown(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}

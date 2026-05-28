@@ -1,0 +1,66 @@
+version: 0.2
+
+env:
+  git-credential-helper: yes
+  variables:
+    NODE_OPTIONS: "--max_old_space_size=2048"
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+    commands:
+      - echo Entered the install phase...
+      - npm --version
+      - npm install -g yarn
+  pre_build:
+    commands:
+      - docker version
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - CURRDATE=$(date +'%Y-%m-%d-%H-%M')
+      - export DOCKER_BUILDKIT=1
+      - docker pull $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG || true
+  build:
+    commands:
+      - echo Build started on `date` for $CODEBUILD_SOURCE_REPO_URL using $CODEBUILD_RESOLVED_SOURCE_VERSION
+      - export COMMIT_ID=$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - yarn config set cache-folder /root/.yarn-cache
+      - yarn global add node-gyp
+      - yarn install --frozen-lockfile
+      # Use webpack for build: CodeBuild cache restores node_modules as a symlink
+      # outside project root, which Turbopack (Next.js 16 default) rejects.
+      # NEXT_PUBLIC_* vars must be present in the env at this step — they're
+      # inlined into the client bundle by `next build`, not by the Docker step.
+      - yarn build -- --webpack
+      - echo Building the Docker image...
+      - >
+        docker build --cache-from $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG \
+          -f deployment-script/codebuild/build.Dockerfile \
+          --build-arg port=80 \
+          --build-arg BUILDKIT_INLINE_CACHE=1 \
+          --build-arg S3_UPLOAD_FOLDER \
+          --build-arg S3_STATIC_CDN_URL \
+          --build-arg NEXT_PUBLIC_PUBNUB_PUB_KEY \
+          --build-arg NEXT_PUBLIC_PUBNUB_SUB_KEY \
+          --build-arg PARTNER_API_BASE_URL \
+          --build-arg B2B2C_HASH_CODE \
+          --tag $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:${IMAGE_TAG}-${CURRDATE}-$CODEBUILD_RESOLVED_SOURCE_VERSION \
+          --tag $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG \
+          .
+      - echo Uploading the static files to S3...
+      - chmod -R 777 deployment-script/script
+      - ./deployment-script/script/upload.sh
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push -a $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
+      - echo Writing image definitions file...
+      - printf '[{"name":"app","imageUri":"%s"}]' $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:${IMAGE_TAG}-${CURRDATE}-$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json
+artifacts:
+  files: imagedefinitions.json
+cache:
+  paths:
+    - "/root/.yarn-cache/**/*"
+    # Do not cache node_modules: CodeBuild restores it as a symlink outside project
+    # root, causing "Symlink node_modules is invalid" with Next.js 16 Turbopack.
