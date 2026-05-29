@@ -1,6 +1,7 @@
 export { partnerApi, PartnerApiError } from "./client";
 export type { B2b2cAttribute } from "./client";
-export { calculatePaymentFee, selectPaymentFeeTier } from "./fees";
+export { calculatePaymentFee, checkPaymentMethodLimit, selectPaymentFeeTier } from "./fees";
+export type { PaymentLimitViolation } from "./fees";
 export { pickGameLogo, pickItemTypeIcon, pickProductCoverImage } from "./images";
 export type {
   ChatTokenResponse,

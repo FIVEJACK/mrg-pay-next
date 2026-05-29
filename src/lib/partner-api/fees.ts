@@ -49,3 +49,29 @@ export function calculatePaymentFee(
   const fixedRate = toNumber(tier.fixed_rate);
   return Math.round(fixedFee + (amount + fixedFee) * (fixedRate / 100));
 }
+
+export type PaymentLimitViolation =
+  | { type: "below_min"; limit: number }
+  | { type: "above_max"; limit: number };
+
+/**
+ * Check whether `amount` falls outside the method's accepted range.
+ *
+ * Returns `null` when the method accepts `amount`, or a violation describing
+ * which bound was crossed and what the bound is — so the UI can show
+ * "Minimum Rp X" / "Maksimum Rp Y" without re-reading the method.
+ *
+ * `0`/`undefined` limits are treated as "no limit" (matches how the API
+ * publishes unconstrained methods).
+ */
+export function checkPaymentMethodLimit(
+  method: Pick<PaymentMethod, "minimum_payment_limit" | "maximum_payment_limit"> | null | undefined,
+  amount: number,
+): PaymentLimitViolation | null {
+  if (!method) return null;
+  const min = toNumber(method.minimum_payment_limit);
+  const max = toNumber(method.maximum_payment_limit);
+  if (min > 0 && amount < min) return { type: "below_min", limit: min };
+  if (max > 0 && amount > max) return { type: "above_max", limit: max };
+  return null;
+}

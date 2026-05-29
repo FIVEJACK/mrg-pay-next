@@ -5,8 +5,8 @@ import { createPortal } from "react-dom";
 
 import { XIcon } from "@/components/icon";
 import { formatPriceIDR } from "@/lib/format";
-import { calculatePaymentFee } from "@/lib/partner-api";
-import type { PaymentGroup, PaymentMethod } from "@/lib/partner-api";
+import { calculatePaymentFee, checkPaymentMethodLimit } from "@/lib/partner-api";
+import type { PaymentGroup, PaymentLimitViolation, PaymentMethod } from "@/lib/partner-api";
 
 type PaymentMethodModalProps = {
   open: boolean;
@@ -193,15 +193,19 @@ export function PaymentMethodModal({
                 {g.name}
               </h3>
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                {g.payment_method_list.map((m) => (
-                  <ModalPaymentCard
-                    key={m.id}
-                    method={m}
-                    fee={calculatePaymentFee(m, amount)}
-                    selected={m.id === draftId}
-                    onSelect={() => setDraftId(m.id)}
-                  />
-                ))}
+                {g.payment_method_list.map((m) => {
+                  const violation = checkPaymentMethodLimit(m, amount);
+                  return (
+                    <ModalPaymentCard
+                      key={m.id}
+                      method={m}
+                      fee={calculatePaymentFee(m, amount)}
+                      selected={m.id === draftId}
+                      violation={violation}
+                      onSelect={() => setDraftId(m.id)}
+                    />
+                  );
+                })}
               </div>
             </section>
           ))}
@@ -240,23 +244,36 @@ function ModalPaymentCard({
   method,
   fee,
   selected,
+  violation,
   onSelect,
 }: {
   method: PaymentMethod;
   fee: number;
   selected: boolean;
+  violation: PaymentLimitViolation | null;
   onSelect: () => void;
 }) {
+  const disabled = violation != null;
+  const limitLabel = disabled
+    ? violation!.type === "below_min"
+      ? `Min ${formatPriceIDR(violation!.limit)}`
+      : `Maks ${formatPriceIDR(violation!.limit)}`
+    : null;
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
+      aria-disabled={disabled}
+      disabled={disabled}
+      title={limitLabel ?? undefined}
       onClick={onSelect}
       className={`flex h-[68px] min-w-0 items-center gap-3 rounded-2xl px-4 py-3 text-left transition ${
-        selected
-          ? "border-2 border-(--color-brand) bg-(--color-surface-focus)"
-          : "border border-(--color-border-low) bg-white hover:border-(--color-border)"
+        disabled
+          ? "cursor-not-allowed border border-(--color-border-low) bg-(--color-bg-subtle) opacity-50"
+          : selected
+            ? "border-2 border-(--color-brand) bg-(--color-surface-focus)"
+            : "border border-(--color-border-low) bg-white hover:border-(--color-border)"
       }`}
     >
       {method.icon_url ? (
@@ -276,7 +293,7 @@ function ModalPaymentCard({
         {method.name}
       </span>
       <span className="shrink-0 text-sm text-(--color-text-body)">
-        {fee > 0 ? formatPriceIDR(fee) : "Gratis"}
+        {limitLabel ?? (fee > 0 ? formatPriceIDR(fee) : "Gratis")}
       </span>
     </button>
   );

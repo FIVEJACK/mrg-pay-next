@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 
 import { formatPriceIDR } from "@/lib/format";
-import { calculatePaymentFee } from "@/lib/partner-api";
-import type { PaymentGroup, PaymentMethod } from "@/lib/partner-api";
+import { calculatePaymentFee, checkPaymentMethodLimit } from "@/lib/partner-api";
+import type { PaymentGroup, PaymentLimitViolation, PaymentMethod } from "@/lib/partner-api";
 
 import { ChevronRightIcon } from "@/components/icon";
 
@@ -93,15 +93,19 @@ export function PaymentMethodList({
       </h2>
       <div className="rounded-2xl border border-(--color-border-low) bg-white p-6">
         <div role="radiogroup" aria-label="Metode Pembayaran" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {visible.map((m) => (
-            <PaymentCard
-              key={m.id}
-              method={m}
-              fee={calculatePaymentFee(m, amount)}
-              selected={m.id === selectedId}
-              onSelect={() => onSelect(m.id)}
-            />
-          ))}
+          {visible.map((m) => {
+            const violation = checkPaymentMethodLimit(m, amount);
+            return (
+              <PaymentCard
+                key={m.id}
+                method={m}
+                fee={calculatePaymentFee(m, amount)}
+                selected={m.id === selectedId}
+                violation={violation}
+                onSelect={() => onSelect(m.id)}
+              />
+            );
+          })}
 
           {hidden.length > 0 && (
             <button
@@ -141,23 +145,31 @@ function PaymentCard({
   method,
   fee,
   selected,
+  violation,
   onSelect,
 }: {
   method: PaymentMethod;
   fee: number;
   selected: boolean;
+  violation: PaymentLimitViolation | null;
   onSelect: () => void;
 }) {
+  const disabled = violation != null;
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
+      aria-disabled={disabled}
+      disabled={disabled}
+      title={disabled ? formatLimitViolation(violation) : undefined}
       onClick={onSelect}
       className={`flex h-[68px] min-w-0 items-center gap-3 rounded-2xl px-6 py-4 text-left transition ${
-        selected
-          ? "border-2 border-(--color-brand) bg-(--color-surface-focus)"
-          : "border border-(--color-border-low) bg-white hover:border-(--color-border)"
+        disabled
+          ? "cursor-not-allowed border border-(--color-border-low) bg-(--color-bg-subtle) opacity-50"
+          : selected
+            ? "border-2 border-(--color-brand) bg-(--color-surface-focus)"
+            : "border border-(--color-border-low) bg-white hover:border-(--color-border)"
       }`}
     >
       <PaymentLogoChip method={method} />
@@ -165,12 +177,23 @@ function PaymentCard({
         <span className="font-[family-name:var(--font-heading)] truncate text-base leading-6 text-(--color-text-secondary)">
           {method.name}
         </span>
-        <span className="ml-auto whitespace-nowrap font-[family-name:var(--font-heading)] text-base leading-6 text-(--color-text-secondary)">
-          {fee > 0 ? formatPriceIDR(fee) : "Gratis"}
+        <span className="ml-auto whitespace-nowrap font-[family-name:var(--font-heading)] text-sm leading-6 text-(--color-text-secondary)">
+          {disabled
+            ? formatLimitViolation(violation)
+            : fee > 0
+              ? formatPriceIDR(fee)
+              : "Gratis"}
         </span>
       </span>
     </button>
   );
+}
+
+function formatLimitViolation(v: PaymentLimitViolation | null): string {
+  if (!v) return "";
+  return v.type === "below_min"
+    ? `Min ${formatPriceIDR(v.limit)}`
+    : `Maks ${formatPriceIDR(v.limit)}`;
 }
 
 function PaymentLogoChip({ method }: { method: PaymentMethod }) {

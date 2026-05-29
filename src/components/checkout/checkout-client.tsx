@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   partnerBrowserApi,
   PartnerApiError,
 } from "@/lib/partner-api/browser-client";
-import { calculatePaymentFee } from "@/lib/partner-api";
+import { calculatePaymentFee, checkPaymentMethodLimit } from "@/lib/partner-api";
 import type {
   CreateOrderBody,
   PaymentGroup,
@@ -86,10 +86,6 @@ export function CheckoutClient({
       .getPaymentMethods(buyerCountry, { signal: controller.signal })
       .then((groups) => {
         setPaymentGroups(groups);
-        const first = groups
-          .filter((g) => g.is_active === 1)
-          .flatMap((g) => g.payment_method_list.filter((m) => m.is_active === 1))[0];
-        if (first) setSelectedPaymentId(first.id);
       })
       .catch((err: unknown) => {
         if ((err as { name?: string })?.name === "AbortError") return;
@@ -103,16 +99,28 @@ export function CheckoutClient({
 
   const subtotal = product.price * quantity;
 
-  const selectedFee = useMemo(() => {
-    if (!paymentGroups || selectedPaymentId == null) return 0;
-    for (const g of paymentGroups) {
-      for (const m of g.payment_method_list) {
-        if (m.id === selectedPaymentId) return calculatePaymentFee(m, subtotal);
-      }
-    }
-    return 0;
-  }, [paymentGroups, selectedPaymentId, subtotal]);
+  // Derive the effective selection during render: prefer the user's explicit
+  // pick when it fits the current subtotal, otherwise fall back to the first
+  // method whose min/max range covers `subtotal`. This keeps quantity changes
+  // and initial load consistent without a setState-in-effect.
+  const availableMethods = paymentGroups
+    ? paymentGroups
+        .filter((g) => g.is_active === 1)
+        .flatMap((g) => g.payment_method_list.filter((m) => m.is_active === 1))
+    : [];
+  const userPickedMethod =
+    selectedPaymentId != null
+      ? availableMethods.find((m) => m.id === selectedPaymentId) ?? null
+      : null;
+  const userPickValid =
+    userPickedMethod != null &&
+    checkPaymentMethodLimit(userPickedMethod, subtotal) == null;
+  const effectiveMethod = userPickValid
+    ? userPickedMethod
+    : availableMethods.find((m) => checkPaymentMethodLimit(m, subtotal) == null) ?? null;
+  const effectivePaymentId = effectiveMethod?.id ?? null;
 
+  const selectedFee = effectiveMethod ? calculatePaymentFee(effectiveMethod, subtotal) : 0;
   const total = subtotal + selectedFee;
   const stock = typeof product.stock === "number" && product.stock > 0 ? product.stock : undefined;
 
@@ -152,7 +160,7 @@ export function CheckoutClient({
   async function handleSubmit() {
     setSubmitError(null);
     if (!validate()) return;
-    if (selectedPaymentId == null) {
+    if (effectivePaymentId == null) {
       setSubmitError("Pilih metode pembayaran terlebih dahulu.");
       return;
     }
@@ -164,7 +172,7 @@ export function CheckoutClient({
     }
 
     const body: CreateOrderBody = {
-      payment_method_id: selectedPaymentId,
+      payment_method_id: effectivePaymentId,
       product_id: product.id,
       quantity,
       price: product.price,
@@ -238,7 +246,7 @@ export function CheckoutClient({
           groups={paymentGroups}
           loading={paymentLoading}
           error={paymentError}
-          selectedId={selectedPaymentId}
+          selectedId={effectivePaymentId}
           onSelect={setSelectedPaymentId}
           amount={subtotal}
         />
@@ -249,7 +257,7 @@ export function CheckoutClient({
         adminFee={selectedFee}
         total={total}
         ctaLabel="Lanjut ke Pembayaran"
-        ctaDisabled={paymentLoading || selectedPaymentId == null}
+        ctaDisabled={paymentLoading || effectivePaymentId == null}
         submitting={submitting}
         errorMessage={submitError}
         onSubmit={handleSubmit}
