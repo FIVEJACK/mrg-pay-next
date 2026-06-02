@@ -37,9 +37,29 @@ export function RangeFilterPopover({
   }, [value?.min, value?.max]);
 
   function handleApply() {
+    let minNum = min !== "" ? Number(min) : undefined;
+    let maxNum = max !== "" ? Number(max) : undefined;
+
+    // Clamp each value to the hard bounds from validation_rules.
+    const cMin = constraintMin !== undefined ? Number(constraintMin) : undefined;
+    const cMax = constraintMax !== undefined ? Number(constraintMax) : undefined;
+    if (cMin !== undefined) {
+      if (minNum !== undefined) minNum = Math.max(cMin, minNum);
+      if (maxNum !== undefined) maxNum = Math.max(cMin, maxNum);
+    }
+    if (cMax !== undefined) {
+      if (minNum !== undefined) minNum = Math.min(cMax, minNum);
+      if (maxNum !== undefined) maxNum = Math.min(cMax, maxNum);
+    }
+
+    // Swap inverted range so min is always ≤ max.
+    if (minNum !== undefined && maxNum !== undefined && minNum > maxNum) {
+      [minNum, maxNum] = [maxNum, minNum];
+    }
+
     const result: Partial<RangeValue> = {};
-    if (min) result.min = min;
-    if (max) result.max = max;
+    if (minNum !== undefined) result.min = String(minNum);
+    if (maxNum !== undefined) result.max = String(maxNum);
     onApply(Object.keys(result).length > 0 ? result : undefined);
     onClose();
   }

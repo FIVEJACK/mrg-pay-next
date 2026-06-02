@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { SearchIcon } from "@/components/icon";
 import type { FilterOption, FilterOptionId } from "./filter-popover";
@@ -27,10 +27,6 @@ export function CheckboxFilterPopover({
 }: CheckboxFilterPopoverProps) {
   const [staged, setStaged] = useState<FilterOptionId[]>(selectedIds);
   const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    setStaged(selectedIds);
-  }, [selectedIds]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
