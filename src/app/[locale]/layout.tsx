@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 
+import { DeviceProvider } from "@/components/shared/device-context";
+import { getDevice } from "@/lib/device.server";
 import { routing } from "@/i18n/routing";
 
 const exo2 = Exo_2({
@@ -50,6 +52,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   setRequestLocale(locale);
 
   const messages = await getMessages();
+  const device = await getDevice();
 
   return (
     <html
@@ -57,7 +60,9 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       className={`${exo2.variable} ${oxanium.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-white text-(--color-text-title)">
-        <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>
+          <DeviceProvider device={device}>{children}</DeviceProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

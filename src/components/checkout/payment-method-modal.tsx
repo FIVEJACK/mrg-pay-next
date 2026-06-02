@@ -281,11 +281,11 @@ function ModalPaymentCard({
         <img
           src={method.icon_url}
           alt=""
-          className="h-6 w-[46px] shrink-0 object-contain"
+          className="h-8 w-14 shrink-0 object-contain"
           loading="lazy"
         />
       ) : (
-        <span className="flex h-6 w-[46px] shrink-0 items-center justify-center rounded-sm bg-(--color-bg-subtle) text-[10px] font-bold leading-none text-(--color-text-secondary)">
+        <span className="flex h-8 w-14 shrink-0 items-center justify-center rounded-sm bg-(--color-bg-subtle) text-[11px] font-bold leading-none text-(--color-text-secondary)">
           {method.name.slice(0, 4).toUpperCase()}
         </span>
       )}

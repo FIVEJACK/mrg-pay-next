@@ -14,14 +14,14 @@ import type {
   RequiredInfoField,
 } from "@/lib/partner-api";
 
-import { BuyerInfoCard } from "./buyer-info-card";
-import { OrderSummaryCard } from "./order-summary-card";
-import { PaymentDetailSidebar } from "./payment-detail-sidebar";
-import { PaymentMethodList } from "./payment-method-list";
+import { BuyerInfoCard } from "@/components/checkout/buyer-info-card";
+import { OrderSummaryCard } from "@/components/checkout/order-summary-card";
+import { PaymentDetailSidebar } from "@/components/checkout/payment-detail-sidebar";
+import { PaymentMethodList } from "@/components/checkout/payment-method-list";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type CheckoutClientProps = {
+export type CheckoutViewProps = {
   product: Product;
   productImageUrl: string | null;
   initialQuantity: number;
@@ -31,14 +31,14 @@ type CheckoutClientProps = {
   buyerCurrency?: string;
 };
 
-export function CheckoutClient({
+export function CheckoutDesktop({
   product,
   productImageUrl,
   initialQuantity,
   hashCode,
   buyerCountry = "ID",
   buyerCurrency = "IDR",
-}: CheckoutClientProps) {
+}: CheckoutViewProps) {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
 

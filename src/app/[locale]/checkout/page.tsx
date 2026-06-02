@@ -1,4 +1,4 @@
-import { CheckoutClient } from "@/components/checkout/checkout-client";
+import { CheckoutView } from "@/components/checkout/checkout-view";
 import { CheckoutFooter } from "@/components/checkout/checkout-footer";
 import { CheckoutHeader } from "@/components/checkout/checkout-header";
 import {
@@ -56,7 +56,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
 
   return (
     <CheckoutShell>
-      <CheckoutClient
+      <CheckoutView
         product={product}
         productImageUrl={pickProductCoverImage(product)}
         initialQuantity={initialQuantity}

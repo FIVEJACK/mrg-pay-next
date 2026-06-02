@@ -1,4 +1,4 @@
-import { ProductListShell } from "@/components/pdp/product-list-shell";
+import { ProductListView } from "@/components/pdp/product-list-view";
 import { tryDecodeB2b2cHash } from "@/lib/partner-api/b2b2c-hash";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export default async function ProductListPage({ searchParams }: PageProps) {
   // iframe page does the heavy fetching (game-info, products, etc.).
   if (!hashCode || !tryDecodeB2b2cHash(hashCode)) return <MissingHashState />;
 
-  return <ProductListShell hashCode={hashCode} />;
+  return <ProductListView hashCode={hashCode} />;
 }
 
 function MissingHashState() {

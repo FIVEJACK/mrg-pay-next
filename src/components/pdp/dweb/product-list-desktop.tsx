@@ -11,11 +11,11 @@ import {
 } from "@/components/pdp/product-list-messaging";
 import { useRouter } from "@/i18n/navigation";
 
-type ProductListShellProps = {
+export type ProductListViewProps = {
   hashCode: string;
 };
 
-export function ProductListShell({ hashCode }: ProductListShellProps) {
+export function ProductListDesktop({ hashCode }: ProductListViewProps) {
   const router = useRouter();
   const [selected, setSelected] = useState<ProductSelectedPayload | null>(null);
 

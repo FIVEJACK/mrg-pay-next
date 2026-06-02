@@ -1,5 +1,5 @@
 import { InvoiceBanner } from "@/components/invoice/invoice-banner";
-import { InvoiceClient } from "@/components/invoice/invoice-client";
+import { InvoiceView } from "@/components/invoice/invoice-view";
 import { InvoiceHeader } from "@/components/invoice/invoice-header";
 import { CheckoutFooter } from "@/components/checkout/checkout-footer";
 
@@ -24,7 +24,7 @@ export default async function InvoicePage({ searchParams }: PageProps) {
 
   return (
     <InvoiceShell>
-      <InvoiceClient transactionUuid={transactionUuid} />
+      <InvoiceView transactionUuid={transactionUuid} />
     </InvoiceShell>
   );
 }

@@ -6,20 +6,20 @@ import { Link } from "@/i18n/navigation";
 import { partnerBrowserApi, PartnerApiError } from "@/lib/partner-api/browser-client";
 import type { TransactionDetail } from "@/lib/partner-api";
 
-import { ChatPanel } from "./chat-panel";
-import { OrderDetailCard } from "./order-detail-card";
-import { PaymentDetailCard } from "./payment-detail-card";
-import { SupportCard } from "./support-card";
+import { ChatPanel } from "@/components/invoice/chat-panel";
+import { OrderDetailCard } from "@/components/invoice/order-detail-card";
+import { PaymentDetailCard } from "@/components/invoice/payment-detail-card";
+import { SupportCard } from "@/components/invoice/support-card";
 import {
   TransactionStatusCard,
   type InvoiceState,
-} from "./transaction-status-card";
+} from "@/components/invoice/transaction-status-card";
 
-type InvoiceClientProps = {
+export type InvoiceViewProps = {
   transactionUuid: string;
 };
 
-export function InvoiceClient({ transactionUuid }: InvoiceClientProps) {
+export function InvoiceDesktop({ transactionUuid }: InvoiceViewProps) {
   const [transaction, setTransaction] = useState<TransactionDetail | null>(null);
   const [userIdLabel, setUserIdLabel] = useState("User ID");
   const [loading, setLoading] = useState(true);
