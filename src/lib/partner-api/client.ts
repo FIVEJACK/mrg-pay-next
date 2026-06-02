@@ -34,7 +34,7 @@ type QueryValue =
   | number
   | boolean
   | string[]
-  | Record<string, string>
+  | Record<string, string | string[] | { min?: string; max?: string }>
   | undefined;
 
 type FetchOptions = {
@@ -52,11 +52,23 @@ function buildUrl(path: string, query?: FetchOptions["query"]) {
       if (Array.isArray(value)) {
         for (const v of value) url.searchParams.append(`${key}[]`, String(v));
       } else if (typeof value === "object") {
-        // Bracket-notation: e.g. attributes → product_attribute[<id>]=value.
-        const prefix = key === "attributes" ? "product_attribute" : key;
-        for (const [k, v] of Object.entries(value)) {
-          if (v === undefined || v === null || v === "") continue;
-          url.searchParams.append(`${prefix}[${k}]`, String(v));
+        const prefix = key === "attributes" ? "product_attributes" : key;
+        for (const [attrId, attrVal] of Object.entries(value)) {
+          if (attrVal === undefined || attrVal === null) continue;
+          if (Array.isArray(attrVal)) {
+            // CHECKBOX: product_attributes[id][0]=v0&[1]=v1
+            (attrVal as string[]).forEach((item: string, i: number) => {
+              if (item) url.searchParams.append(`${prefix}[${attrId}][${i}]`, item);
+            });
+          } else if (typeof attrVal === "object") {
+            // FREE_TEXT: product_attributes[id][min]=v&[max]=v
+            const range = attrVal as { min?: string; max?: string };
+            if (range.min) url.searchParams.append(`${prefix}[${attrId}][min]`, range.min);
+            if (range.max) url.searchParams.append(`${prefix}[${attrId}][max]`, range.max);
+          } else {
+            // RADIO: product_attributes[id]=value
+            url.searchParams.append(`${prefix}[${attrId}]`, String(attrVal));
+          }
         }
       } else {
         url.searchParams.set(key, String(value));

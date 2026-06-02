@@ -25,7 +25,7 @@ type QueryValue =
   | number
   | boolean
   | string[]
-  | Record<string, string>
+  | Record<string, string | string[] | { min?: string; max?: string }>
   | undefined;
 
 function buildUrl(path: string, query?: Record<string, QueryValue>) {
@@ -36,10 +36,23 @@ function buildUrl(path: string, query?: Record<string, QueryValue>) {
       if (Array.isArray(v)) {
         for (const x of v) usp.append(`${k}[]`, String(x));
       } else if (typeof v === "object") {
-        const prefix = k === "attributes" ? "product_attribute" : k;
-        for (const [kk, vv] of Object.entries(v)) {
-          if (vv === undefined || vv === null || vv === "") continue;
-          usp.append(`${prefix}[${kk}]`, String(vv));
+        const prefix = k === "attributes" ? "product_attributes" : k;
+        for (const [attrId, attrVal] of Object.entries(v)) {
+          if (attrVal === undefined || attrVal === null) continue;
+          if (Array.isArray(attrVal)) {
+            // CHECKBOX: product_attributes[id][0]=v0&[1]=v1
+            (attrVal as string[]).forEach((item, i) => {
+              if (item) usp.append(`${prefix}[${attrId}][${i}]`, item);
+            });
+          } else if (typeof attrVal === "object") {
+            // FREE_TEXT: product_attributes[id][min]=v&[max]=v
+            const range = attrVal as { min?: string; max?: string };
+            if (range.min) usp.append(`${prefix}[${attrId}][min]`, range.min);
+            if (range.max) usp.append(`${prefix}[${attrId}][max]`, range.max);
+          } else {
+            // RADIO: product_attributes[id]=value
+            usp.append(`${prefix}[${attrId}]`, String(attrVal));
+          }
         }
       } else {
         usp.set(k, String(v));

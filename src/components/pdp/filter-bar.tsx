@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
   B2b2cAttribute,
@@ -10,6 +10,9 @@ import type {
 } from "@/lib/partner-api";
 
 import { FilterPopover, type FilterOption } from "./filter-popover";
+import { CheckboxFilterPopover } from "./checkbox-filter-popover";
+import { RangeFilterPopover } from "./range-filter-popover";
+import { SortPopover } from "./sort-popover";
 import { ChevronDownIcon, SearchIcon } from "@/components/icon";
 import { Popover } from "./popover";
 
@@ -42,27 +45,99 @@ type FilterBarProps = {
   onChange: (updates: Partial<Filters>) => void;
 };
 
+const FIELD_TYPE = {
+  FREE_TEXT: 1,
+  CHECKBOX: 2,
+  RADIO: 3,
+} as const;
+
+const ATTR_FORMAT = {
+  STRING: 1,
+  NUMERIC: 2,
+  PERCENTAGE: 3,
+} as const;
+
 type AttrConfig = {
   format?: number;
   field_type?: number;
   options?: string[];
+  validation_rules?: Array<{ validation_name: string; value: string }>;
 };
 
 type AttrFilter = {
   id: number;
   translationKey: string;
+  fieldType: number;
+  format: number;
   options: string[];
+  min?: string;
+  max?: string;
 };
 
-/** Each option-bearing attribute becomes its own popover, keyed by attribute id. */
 function buildAttributeFilters(attributes: B2b2cAttribute[]): AttrFilter[] {
   const out: AttrFilter[] = [];
   for (const a of attributes) {
     const cfg = a.configuration as AttrConfig;
-    if (!cfg?.options || cfg.options.length === 0) continue;
-    out.push({ id: a.id, translationKey: a.translation_key, options: cfg.options });
+    if (!cfg?.field_type) continue;
+
+    const min = cfg.validation_rules?.find((r) => r.validation_name === "min")?.value;
+    const max = cfg.validation_rules?.find((r) => r.validation_name === "max")?.value;
+
+    if (cfg.field_type === FIELD_TYPE.FREE_TEXT) {
+      out.push({
+        id: a.id,
+        translationKey: a.translation_key,
+        fieldType: cfg.field_type,
+        format: cfg.format ?? ATTR_FORMAT.STRING,
+        options: [],
+        min,
+        max,
+      });
+    } else if (cfg.options && cfg.options.length > 0) {
+      out.push({
+        id: a.id,
+        translationKey: a.translation_key,
+        fieldType: cfg.field_type,
+        format: cfg.format ?? ATTR_FORMAT.STRING,
+        options: cfg.options,
+        min,
+        max,
+      });
+    }
   }
   return out;
+}
+
+/**
+ * Convert the internal URL-safe attribute state into the typed payload the API expects.
+ * Internal encoding per field type:
+ *   FREE_TEXT  → "min|max" string  → { min?, max? }
+ *   CHECKBOX   → "a,b,c" string   → string[]
+ *   RADIO      → plain string     → string
+ */
+export function buildAttributePayload(
+  attributeValues: Record<string, string>,
+  attributeConfig: B2b2cAttribute[],
+): Record<string, string | string[] | { min?: string; max?: string }> {
+  const payload: Record<string, string | string[] | { min?: string; max?: string }> = {};
+  for (const [idKey, raw] of Object.entries(attributeValues)) {
+    if (!raw) continue;
+    const cfg = (attributeConfig.find((a) => String(a.id) === idKey)?.configuration ?? {}) as AttrConfig;
+
+    if (cfg.field_type === FIELD_TYPE.FREE_TEXT) {
+      const parts = raw.split("|");
+      const range: { min?: string; max?: string } = {};
+      if (parts[0]) range.min = parts[0];
+      if (parts[1]) range.max = parts[1];
+      if (range.min || range.max) payload[idKey] = range;
+    } else if (cfg.field_type === FIELD_TYPE.CHECKBOX) {
+      const values = raw.split(",").filter(Boolean);
+      if (values.length > 0) payload[idKey] = values;
+    } else {
+      payload[idKey] = raw;
+    }
+  }
+  return payload;
 }
 
 /** "nama_hero" → "Nama Hero" */
@@ -74,16 +149,17 @@ function humanizeKey(key: string) {
 }
 
 const SORT_OPTIONS: Array<{ value: NonNullable<ProductListQuery["sort"]>; label: string }> = [
-  { value: "popular", label: "Popular Product" },
-  { value: "latest", label: "Latest" },
-  { value: "cheap", label: "Cheapest" },
-  { value: "expensive", label: "Most Expensive" },
-  { value: "fastest_delivery", label: "Fastest Delivery" },
-  { value: "shop_rating", label: "Shop Rating" },
+  { value: "popular", label: "Produk Terpopuler" },
+  { value: "cheap", label: "Harga: Rendah ke Tinggi" },
+  { value: "expensive", label: "Harga: Tinggi ke Rendah" },
+  { value: "shop_rating", label: "Terlaris" },
+  { value: "latest", label: "Terbaru" },
+  { value: "fastest_delivery", label: "Pengiriman Tercepat" },
 ];
 
 const TRIGGER_BASE =
   "flex h-11 shrink-0 cursor-pointer items-center gap-2 rounded-2xl border border-(--color-border) bg-white px-3 text-base text-(--color-text-body) outline-none transition-colors duration-150 ease-out focus:border-(--color-brand) hover:border-(--color-brand) disabled:cursor-not-allowed disabled:text-(--color-text-disabled)";
+
 
 export function FilterBar({
   groupLabel,
@@ -139,31 +215,79 @@ export function FilterBar({
     [servers],
   );
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkScroll();
+    el.addEventListener("scroll", checkScroll, { passive: true });
+    const ro = new ResizeObserver(checkScroll);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", checkScroll);
+      ro.disconnect();
+    };
+  }, [checkScroll]);
+
+  function scrollBy(delta: number) {
+    scrollRef.current?.scrollBy({ left: delta, behavior: "smooth" });
+  }
+
   return (
     <div className="flex items-center gap-3 py-4">
-      <form
-        role="search"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const fd = new FormData(e.currentTarget);
-          const value = String(fd.get("keyword") ?? "").trim();
-          onChange({ keyword: value || undefined });
-        }}
-        className="flex w-[300px] shrink-0"
-      >
-        <label className="flex h-11 w-full items-center gap-2 rounded-2xl border border-(--color-border) bg-white px-3">
-          <SearchIcon className="size-5 text-(--color-text-subdued)" />
-          <input
-            type="search"
-            name="keyword"
-            defaultValue={keyword}
-            placeholder="Search…"
-            className="w-full bg-transparent text-base text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none"
-          />
-        </label>
-      </form>
+      <div className="relative flex min-w-0 flex-1 items-center">
+        {/* Left scroll arrow */}
+        {canScrollLeft && (
+          <button
+            type="button"
+            onClick={() => scrollBy(-200)}
+            aria-label="Scroll kiri"
+            className="absolute left-0 z-10 flex size-8 shrink-0 items-center justify-center rounded-full border border-(--color-border) bg-white shadow-sm hover:border-(--color-brand)"
+          >
+            <ChevronDownIcon className="size-4 rotate-90 text-(--color-text-body)" />
+          </button>
+        )}
 
-      <div className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div
+          ref={scrollRef}
+          className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{
+            paddingLeft: canScrollLeft ? "2.25rem" : undefined,
+            paddingRight: canScrollRight ? "2.25rem" : undefined,
+          }}
+        >
+        <form
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const fd = new FormData(e.currentTarget);
+            const value = String(fd.get("keyword") ?? "").trim();
+            onChange({ keyword: value || undefined });
+          }}
+          className="flex w-[300px] shrink-0"
+        >
+          <label className="flex h-11 w-full items-center gap-2 rounded-2xl border border-(--color-border) bg-white px-3">
+            <SearchIcon className="size-5 text-(--color-text-subdued)" />
+            <input
+              type="search"
+              name="keyword"
+              defaultValue={keyword}
+              placeholder="Search…"
+              className="w-full bg-transparent text-base text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none"
+            />
+          </label>
+        </form>
+
       {groupOptions.length > 0 && (
         <Popover
           renderTrigger={({ ref, onClick, open }) => (
@@ -261,6 +385,96 @@ export function FilterBar({
         const idKey = String(attr.id);
         const label = humanizeKey(attr.translationKey);
         const selected = attributeValues[idKey];
+
+        if (attr.fieldType === FIELD_TYPE.FREE_TEXT) {
+          // Range stored as "min|max" — either part may be empty.
+          const parts = selected ? selected.split("|") : ["", ""];
+          const rangeValue = { min: parts[0] ?? "", max: parts[1] ?? "" };
+          const hasRange = rangeValue.min || rangeValue.max;
+          const triggerLabel = hasRange
+            ? `${label}: ${rangeValue.min || "…"} – ${rangeValue.max || "…"}`
+            : `${label}: Semua`;
+          return (
+            <Popover
+              key={attr.id}
+              renderTrigger={({ ref, onClick, open }) => (
+                <button
+                  ref={ref}
+                  type="button"
+                  onClick={onClick}
+                  aria-haspopup="dialog"
+                  aria-expanded={open}
+                  className={`${TRIGGER_BASE} ${open ? "border-(--color-brand)" : ""}`}
+                >
+                  <span className="truncate">{triggerLabel}</span>
+                  <ChevronDownIcon className="size-5 shrink-0 text-(--color-text-subdued)" />
+                </button>
+              )}
+              renderContent={({ close }) => (
+                <RangeFilterPopover
+                  title="Filter"
+                  sectionLabel={label}
+                  value={rangeValue}
+                  constraintMin={attr.min}
+                  constraintMax={attr.max}
+                  onApply={(v) => {
+                    const next = { ...attributeValues };
+                    const serialized = `${v?.min ?? ""}|${v?.max ?? ""}`;
+                    if (serialized === "|") delete next[idKey];
+                    else next[idKey] = serialized;
+                    onChange({ attributes: next });
+                  }}
+                  onClose={close}
+                />
+              )}
+            />
+          );
+        }
+
+        if (attr.fieldType === FIELD_TYPE.CHECKBOX) {
+          const selectedArr = selected ? selected.split(",") : [];
+          const triggerLabel =
+            selectedArr.length === 0
+              ? `${label}: Semua`
+              : selectedArr.length === 1
+                ? `${label}: ${selectedArr[0]}`
+                : `${label}: ${selectedArr.length} terpilih`;
+          return (
+            <Popover
+              key={attr.id}
+              renderTrigger={({ ref, onClick, open }) => (
+                <button
+                  ref={ref}
+                  type="button"
+                  onClick={onClick}
+                  aria-haspopup="dialog"
+                  aria-expanded={open}
+                  className={`${TRIGGER_BASE} ${open ? "border-(--color-brand)" : ""}`}
+                >
+                  <span className="truncate">{triggerLabel}</span>
+                  <ChevronDownIcon className="size-5 shrink-0 text-(--color-text-subdued)" />
+                </button>
+              )}
+              renderContent={({ close }) => (
+                <CheckboxFilterPopover
+                  title={label}
+                  options={attr.options.map((o) => ({ id: o, name: o }))}
+                  selectedIds={selectedArr}
+                  searchable={attr.options.length > 8}
+                  onApply={(ids) => {
+                    const next = { ...attributeValues };
+                    if (ids.length === 0) delete next[idKey];
+                    else next[idKey] = ids.join(",");
+                    onChange({ attributes: next });
+                  }}
+                  onClose={close}
+                />
+              )}
+            />
+          );
+        }
+
+        // FIELD_TYPE.RADIO (3) — single-select
         const triggerLabel = `${label}: ${selected ?? "Semua"}`;
         return (
           <Popover
@@ -297,25 +511,46 @@ export function FilterBar({
         );
       })}
 
+        </div>
+
+        {/* Right scroll arrow */}
+        {canScrollRight && (
+          <button
+            type="button"
+            onClick={() => scrollBy(200)}
+            aria-label="Scroll kanan"
+            className="absolute right-0 z-10 flex size-8 shrink-0 items-center justify-center rounded-full border border-(--color-border) bg-white shadow-sm hover:border-(--color-brand)"
+          >
+            <ChevronDownIcon className="size-4 -rotate-90 text-(--color-text-body)" />
+          </button>
+        )}
       </div>
 
-      <div className="relative w-[220px] shrink-0">
-        <select
-          aria-label="Sort"
-          value={sort}
-          onChange={(e) =>
-            onChange({ sort: e.target.value as NonNullable<ProductListQuery["sort"]> })
-          }
-          className="h-11 w-full cursor-pointer appearance-none rounded-2xl border border-(--color-border) bg-white pl-3 pr-9 text-base text-(--color-text-body) outline-none focus:border-(--color-brand)"
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {`Sort: ${opt.label}`}
-            </option>
-          ))}
-        </select>
-        <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 size-5 -translate-y-1/2 text-(--color-text-subdued)" />
-      </div>
+      <Popover
+        renderTrigger={({ ref, onClick, open }) => (
+          <button
+            ref={ref}
+            type="button"
+            onClick={onClick}
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            className={`${TRIGGER_BASE} w-[220px] shrink-0 ${open ? "border-(--color-brand)" : ""}`}
+          >
+            <span className="truncate">
+              {`Sort: ${SORT_OPTIONS.find((o) => o.value === sort)?.label ?? sort}`}
+            </span>
+            <ChevronDownIcon className="size-5 shrink-0 text-(--color-text-subdued)" />
+          </button>
+        )}
+        renderContent={({ close }) => (
+          <SortPopover
+            options={SORT_OPTIONS}
+            value={sort}
+            onSelect={(v) => onChange({ sort: v })}
+            onClose={close}
+          />
+        )}
+      />
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { FilterBar } from "@/components/pdp/filter-bar";
+import { FilterBar, buildAttributePayload } from "@/components/pdp/filter-bar";
 import { Pagination } from "@/components/pdp/pagination";
 import { ProductDetailPanel } from "@/components/pdp/product-detail-panel";
 import { ProductGrid } from "@/components/pdp/product-grid";
@@ -111,10 +111,10 @@ export function ProductListClient({
     let cancelled = false;
     setProductsLoading(true);
     // Attributes are b2b2c-scoped: only send them while on the hash-decoded item type.
-    const attributePayload =
-      activeItemTypeId === scopeItemTypeId ? filters.attributes : undefined;
-    const hasAttributePayload =
-      attributePayload && Object.keys(attributePayload).length > 0;
+    const rawAttributes =
+      activeItemTypeId === scopeItemTypeId ? filters.attributes : {};
+    const attributePayload = buildAttributePayload(rawAttributes, attributes);
+    const hasAttributePayload = Object.keys(attributePayload).length > 0;
 
     partnerBrowserApi
       .getProducts(
