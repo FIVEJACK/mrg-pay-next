@@ -243,7 +243,74 @@ export function FilterBar({
     scrollRef.current?.scrollBy({ left: delta, behavior: "smooth" });
   }
 
+  // Active filter chips — computed inline (cheap; re-runs only when filter
+  // state changes which is exactly when chips should update anyway).
+  const activeChips: Array<{ key: string; label: string; onRemove: () => void }> = [];
+
+  if (itemInfoGroupId) {
+    const name = groups.find((g) => g.id === itemInfoGroupId)?.name ?? String(itemInfoGroupId);
+    activeChips.push({
+      key: "group",
+      label: `${groupLabel ?? "Tipe"}: ${name}`,
+      onRemove: () => onChange({ itemInfoGroupId: undefined, itemInfoId: undefined }),
+    });
+  }
+
+  if (itemInfoId) {
+    const name =
+      groups.flatMap((g) => g.item_info).find((i) => i.id === itemInfoId)?.name ??
+      String(itemInfoId);
+    activeChips.push({
+      key: "item",
+      label: `${itemLabel ?? "Item"}: ${name}`,
+      onRemove: () => onChange({ itemInfoId: undefined }),
+    });
+  }
+
+  if (serverId) {
+    const name = servers.find((s) => s.id === serverId)?.name ?? String(serverId);
+    activeChips.push({
+      key: "server",
+      label: `${serverLabel ?? "Server"}: ${name}`,
+      onRemove: () => onChange({ serverId: undefined }),
+    });
+  }
+
+  for (const [idKey, raw] of Object.entries(attributeValues)) {
+    if (!raw) continue;
+    const attr = attributeFilters.find((a) => String(a.id) === idKey);
+    if (!attr) continue;
+    const attrLabel = humanizeKey(attr.translationKey);
+
+    let valueLabel: string;
+    if (attr.fieldType === FIELD_TYPE.FREE_TEXT) {
+      const parts = raw.split("|");
+      const minPart = parts[0] ?? "";
+      const maxPart = parts[1] ?? "";
+      if (minPart && maxPart) valueLabel = `${minPart} – ${maxPart}`;
+      else if (minPart) valueLabel = `≥ ${minPart}`;
+      else valueLabel = `≤ ${maxPart}`;
+    } else if (attr.fieldType === FIELD_TYPE.CHECKBOX) {
+      const values = raw.split(",").filter(Boolean);
+      valueLabel = values.length === 1 ? values[0] : `${values.length} terpilih`;
+    } else {
+      valueLabel = raw;
+    }
+
+    const capturedKey = idKey;
+    activeChips.push({
+      key: `attr-${idKey}`,
+      label: `${attrLabel}: ${valueLabel}`,
+      onRemove: () => {
+        const next = { ...attributeValues };
+        delete next[capturedKey];
+        onChange({ attributes: next });
+      },
+    });
+  }
+
   return (
+    <div>
     <div className="flex items-center gap-3 py-4">
       <div className="relative flex min-w-0 flex-1 items-center">
         {/* Left scroll arrow */}
@@ -551,6 +618,53 @@ export function FilterBar({
           />
         )}
       />
+    </div>
+
+    {activeChips.length > 0 && (
+      <div className="flex flex-wrap items-center gap-2 pb-3">
+        {activeChips.map((chip) => (
+          <span
+            key={chip.key}
+            className="flex items-center gap-1.5 rounded-full border border-(--color-border) bg-white px-3 py-1.5 text-sm text-(--color-text-body)"
+          >
+            {chip.label}
+            <button
+              type="button"
+              onClick={chip.onRemove}
+              aria-label={`Hapus ${chip.label}`}
+              className="flex size-4 items-center justify-center text-(--color-text-subdued) hover:text-(--color-text-body)"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                className="size-3"
+              >
+                <line x1="1" y1="1" x2="11" y2="11" />
+                <line x1="11" y1="1" x2="1" y2="11" />
+              </svg>
+            </button>
+          </span>
+        ))}
+        <button
+          type="button"
+          onClick={() =>
+            onChange({
+              itemInfoGroupId: undefined,
+              itemInfoId: undefined,
+              serverId: undefined,
+              attributes: {},
+            })
+          }
+          className="text-sm font-bold text-(--color-brand)"
+        >
+          Clear All
+        </button>
+      </div>
+    )}
     </div>
   );
 }
