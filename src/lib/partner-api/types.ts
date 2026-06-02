@@ -149,13 +149,13 @@ export type ProductListQuery = {
   page?: number;
   per_page?: number;
   sort?:
-    | "latest"
-    | "oldest"
-    | "cheap"
-    | "expensive"
-    | "popular"
-    | "fastest_delivery"
-    | "shop_rating";
+  | "latest"
+  | "oldest"
+  | "cheap"
+  | "expensive"
+  | "popular"
+  | "fastest_delivery"
+  | "shop_rating";
   use_simple_pagination?: boolean;
   country_codes?: string[];
   /**
@@ -228,6 +228,8 @@ export type PaymentGroup = {
 };
 
 export type CreateOrderBody = {
+
+  partner_id?: number;
   payment_method_id: number;
   product_id: number;
   quantity: number;

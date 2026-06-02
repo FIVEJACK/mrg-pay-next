@@ -1,4 +1,10 @@
-import { CheckIcon, DotIcon } from "@/components/icon";
+import { Fragment } from "react";
+
+import {
+  CheckCircleRounded,
+  CheckRounded,
+  TimerRoundedIcon,
+} from "@/components/icon";
 
 export type StepKey = "bayar" | "diproses" | "selesai";
 
@@ -18,50 +24,58 @@ type StepProgressProps = {
 export function StepProgress({ active }: StepProgressProps) {
   const activeIndex = STEPS.findIndex((s) => s.key === active);
   return (
-    <ol className="flex w-full items-center">
-      {STEPS.map((step, i) => {
-        const completed = i < activeIndex;
-        const isActive = i === activeIndex;
-        return (
-          <li key={step.key} className="flex flex-1 items-center last:flex-none">
-            <div className="flex flex-col items-center gap-2">
-              {completed ? (
-                <span className="flex size-9 items-center justify-center rounded-full bg-emerald-500 text-white">
-                  <CheckIcon className="size-5" />
+    <div className="flex w-full flex-col items-center gap-1 py-2">
+      <div className="flex w-full items-center px-1">
+        {STEPS.map((step, i) => {
+          const completed = i < activeIndex;
+          const isActive = i === activeIndex;
+          const Icon = completed
+            ? CheckRounded
+            : isActive
+              ? TimerRoundedIcon
+              : CheckCircleRounded;
+          const circleBg = completed
+            ? "bg-(--color-success)"
+            : isActive
+              ? "bg-(--color-in-progress)"
+              : "bg-(--color-pending)";
+          return (
+            <Fragment key={step.key}>
+              <span className="flex w-[42px] shrink-0 justify-center">
+                <span
+                  className={`flex size-6 items-center justify-center rounded-full text-white ${circleBg}`}
+                >
+                  <Icon className="size-4" />
                 </span>
-              ) : isActive ? (
-                <span className="flex size-9 items-center justify-center rounded-full border-2 border-(--color-brand) bg-(--color-surface-focus) text-(--color-brand)">
-                  <DotIcon className="size-3" />
-                </span>
-              ) : (
-                <span className="flex size-9 items-center justify-center rounded-full border-2 border-(--color-border) bg-white text-(--color-text-subdued)">
-                  <CheckIcon className="size-5" />
-                </span>
-              )}
-              <span
-                className={`font-[family-name:var(--font-heading)] text-xs ${
-                  isActive
-                    ? "font-bold text-(--color-text-title)"
-                    : completed
-                      ? "text-(--color-text-body)"
-                      : "text-(--color-text-subdued)"
-                }`}
-              >
-                {step.label}
               </span>
-            </div>
-            {i < STEPS.length - 1 && (
-              <span
-                aria-hidden="true"
-                className={`-mt-6 mx-2 h-1 flex-1 rounded-full ${
-                  i < activeIndex ? "bg-emerald-500" : "bg-(--color-border-low)"
-                }`}
-              />
-            )}
-          </li>
-        );
-      })}
-    </ol>
+              {i < STEPS.length - 1 && (
+                <span
+                  aria-hidden="true"
+                  className={`h-1 min-w-px flex-1 rounded-full ${
+                    i < activeIndex
+                      ? "bg-(--color-success)"
+                      : "bg-(--color-border-low)"
+                  }`}
+                />
+              )}
+            </Fragment>
+          );
+        })}
+      </div>
+      <div className="flex w-full justify-between px-1 font-heading text-[10px] leading-[10px] font-medium">
+        {STEPS.map((step, i) => (
+          <span
+            key={step.key}
+            className={`w-[42px] text-center ${
+              i <= activeIndex
+                ? "text-(--color-text-title)"
+                : "text-(--color-text-subdued)"
+            }`}
+          >
+            {step.label}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
-
