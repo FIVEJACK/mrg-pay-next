@@ -77,7 +77,7 @@ export default async function ProductIframePage({ searchParams }: PageProps) {
       <HeroBackground />
 
       <div className="mx-auto w-full max-w-[1440px] px-6 py-10 lg:px-[116px]">
-        <Breadcrumb items={[{ label: "Home", href: "/" }, { label: gameName }]} />
+        <Breadcrumb items={[{ label: "Home", href: "/", target: "_parent" }, { label: gameName }]} />
 
         <div className="mt-6">
           <GameHeader name={gameName} logoUrl={pickGameLogo(gameInfo?.game)} />

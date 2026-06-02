@@ -1,6 +1,6 @@
 import { Link } from "@/i18n/navigation";
 
-type Crumb = { label: string; href?: string };
+type Crumb = { label: string; href?: string; target?: string };
 
 export function Breadcrumb({ items }: { items: Crumb[] }) {
   return (
@@ -13,7 +13,7 @@ export function Breadcrumb({ items }: { items: Crumb[] }) {
         return (
           <span key={`${item.label}-${i}`} className="flex items-center gap-2">
             {item.href && !isLast ? (
-              <Link href={item.href} className="text-[var(--color-brand)] hover:underline">
+              <Link href={item.href} target={item.target} className="text-[var(--color-brand)] hover:underline">
                 {item.label}
               </Link>
             ) : (

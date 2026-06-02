@@ -138,6 +138,12 @@ export type ProductListData = {
   next_page?: number | null;
 };
 
+/** Union of the three possible attribute filter values sent to the API. */
+export type AttributeValue =
+  | string                          // RADIO — single value
+  | string[]                        // CHECKBOX — multiple values
+  | { min?: string; max?: string }; // FREE_TEXT — numeric range
+
 export type ProductListQuery = {
   id?: number;
   game_id?: number;
@@ -160,9 +166,12 @@ export type ProductListQuery = {
   country_codes?: string[];
   /**
    * Dynamic product-attribute filters keyed by attribute id (as string).
-   * Serialized as `product_attribute[<id>]=<value>` on the wire.
+   * Serialized as `product_attributes[<id>][<key>]=<value>` on the wire.
+   * - RADIO    → string          → product_attributes[id]=value
+   * - CHECKBOX → string[]        → product_attributes[id][0]=v0&[1]=v1
+   * - FREE_TEXT→ {min?,max?}     → product_attributes[id][min]=v&[max]=v
    */
-  attributes?: Record<string, string>;
+  attributes?: Record<string, AttributeValue>;
 };
 
 export type RequiredInfoField = {
