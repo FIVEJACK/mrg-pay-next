@@ -96,9 +96,6 @@ export function OrderSummaryCard({
                 pattern="[0-9]*"
                 value={quantity}
                 onChange={(e) => {
-                  // Integer-only: strip everything but digits, so decimals
-                  // ("1.5"), exponents ("1e3"), signs, and letters can't enter
-                  // the field — covers both typing and paste.
                   const digits = e.target.value.replace(/[^0-9]/g, "");
                   if (digits === "") return;
                   const n = parseInt(digits, 10);
@@ -182,7 +179,11 @@ function RequiredInfoInput({
               <span className="truncate">
                 {value || field.placeholder || `Pilih ${field.name.toLowerCase()}`}
               </span>
-              <ChevronDownIcon className="size-5 shrink-0 text-(--color-text-subdued)" />
+              <ChevronDownIcon
+                className={`size-5 shrink-0 text-(--color-text-subdued) transition-transform duration-200 ease-out ${
+                  open ? "rotate-180" : ""
+                }`}
+              />
             </button>
           )}
           renderContent={({ close }) => (

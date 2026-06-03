@@ -606,7 +606,11 @@ export function FilterBar({
             <span className="truncate">
               {`Sort: ${SORT_OPTIONS.find((o) => o.value === sort)?.label ?? sort}`}
             </span>
-            <ChevronDownIcon className="size-5 shrink-0 text-(--color-text-subdued)" />
+            <ChevronDownIcon
+              className={`size-5 shrink-0 text-(--color-text-subdued) transition-transform duration-200 ease-out ${
+                open ? "rotate-180" : ""
+              }`}
+            />
           </button>
         )}
         renderContent={({ close }) => (
