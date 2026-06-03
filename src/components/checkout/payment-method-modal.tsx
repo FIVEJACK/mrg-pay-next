@@ -256,8 +256,8 @@ function ModalPaymentCard({
   const disabled = violation != null;
   const limitLabel = disabled
     ? violation!.type === "below_min"
-      ? `Min ${formatPriceIDR(violation!.limit)}`
-      : `Maks ${formatPriceIDR(violation!.limit)}`
+      ? `Min. Pembayaran ${formatPriceIDR(violation!.limit)}`
+      : `Maks. Pembayaran ${formatPriceIDR(violation!.limit)}`
     : null;
   return (
     <button
@@ -270,7 +270,7 @@ function ModalPaymentCard({
       onClick={onSelect}
       className={`flex h-[68px] min-w-0 items-center gap-3 rounded-2xl px-4 py-3 text-left transition ${
         disabled
-          ? "cursor-not-allowed border border-(--color-border-low) bg-(--color-bg-subtle) opacity-50"
+          ? "cursor-not-allowed border border-(--color-border-low) bg-white"
           : selected
             ? "border-2 border-(--color-brand) bg-(--color-surface-focus)"
             : "border border-(--color-border-low) bg-white hover:border-(--color-border)"
@@ -289,11 +289,26 @@ function ModalPaymentCard({
           {method.name.slice(0, 4).toUpperCase()}
         </span>
       )}
-      <span className="min-w-0 flex-1 truncate text-sm text-(--color-text-body)">
-        {method.name}
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span
+          className={`truncate text-sm ${
+            disabled ? "text-(--color-text-disabled)" : "text-(--color-text-body)"
+          }`}
+        >
+          {method.name}
+        </span>
+        {limitLabel && (
+          <span className="truncate text-xs leading-4 text-(--color-promotion)">
+            {limitLabel}
+          </span>
+        )}
       </span>
-      <span className="shrink-0 text-sm text-(--color-text-body)">
-        {limitLabel ?? (fee > 0 ? formatPriceIDR(fee) : "Gratis")}
+      <span
+        className={`shrink-0 text-sm ${
+          disabled ? "text-(--color-text-disabled)" : "text-(--color-text-body)"
+        }`}
+      >
+        {fee > 0 ? formatPriceIDR(fee) : "Gratis"}
       </span>
     </button>
   );

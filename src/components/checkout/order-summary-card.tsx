@@ -5,7 +5,9 @@ import { useMemo } from "react";
 import { formatPriceIDR } from "@/lib/format";
 import type { RequiredInfoField } from "@/lib/partner-api";
 
-import { MinusIcon, PlusIcon } from "@/components/icon";
+import { ChevronDownIcon, MinusIcon, PlusIcon } from "@/components/icon";
+import { Popover } from "@/components/pdp/popover";
+import { SortPopover } from "@/components/pdp/sort-popover";
 
 type OrderSummaryCardProps = {
   productName: string;
@@ -160,21 +162,34 @@ function RequiredInfoInput({
         {field.name}
       </span>
       {isDropdown ? (
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          aria-invalid={error ? true : undefined}
-          className="h-11 w-full rounded-2xl border border-(--color-border) bg-(--color-surface) px-3 text-base leading-6 text-(--color-text-body) outline-none focus:border-(--color-brand)"
-        >
-          <option value="" disabled>
-            {field.placeholder || `Pilih ${field.name.toLowerCase()}`}
-          </option>
-          {dropdownOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
+        <Popover
+          renderTrigger={({ ref, onClick, open }) => (
+            <button
+              ref={ref}
+              type="button"
+              onClick={onClick}
+              aria-haspopup="dialog"
+              aria-expanded={open}
+              className={`flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-2xl border bg-(--color-surface) px-3 text-base leading-6 outline-none transition-colors duration-150 ease-out hover:border-(--color-brand) ${
+                open ? "border-(--color-brand)" : "border-(--color-border)"
+              } ${value ? "text-(--color-text-body)" : "text-(--color-text-subdued)"}`}
+            >
+              <span className="truncate">
+                {value || field.placeholder || `Pilih ${field.name.toLowerCase()}`}
+              </span>
+              <ChevronDownIcon className="size-5 shrink-0 text-(--color-text-subdued)" />
+            </button>
+          )}
+          renderContent={({ close }) => (
+            <SortPopover
+              title={field.name}
+              options={dropdownOptions.map((opt) => ({ value: opt, label: opt }))}
+              value={value}
+              onSelect={(v) => onChange(v)}
+              onClose={close}
+            />
+          )}
+        />
       ) : (
         <input
           type="text"

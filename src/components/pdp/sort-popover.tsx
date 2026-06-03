@@ -43,7 +43,7 @@ export function SortPopover<T extends string>({
                   onSelect(opt.value);
                   onClose();
                 }}
-                className={`flex w-full items-center justify-between px-4 py-3 text-left text-base transition-colors hover:bg-(--color-surface-hover, #f5f5f5) ${
+                className={`flex w-full items-center justify-between px-4 py-3 text-left text-base transition-colors hover:bg-(--color-bg-subtle) ${
                   selected
                     ? "font-semibold text-(--color-brand)"
                     : "text-(--color-text-body)"

@@ -166,7 +166,7 @@ function PaymentCard({
       onClick={onSelect}
       className={`flex h-[68px] min-w-0 items-center gap-3 rounded-2xl px-6 py-4 text-left transition ${
         disabled
-          ? "cursor-not-allowed border border-(--color-border-low) bg-(--color-bg-subtle) opacity-50"
+          ? "cursor-not-allowed border border-(--color-border-low) bg-white"
           : selected
             ? "border-2 border-(--color-brand) bg-(--color-surface-focus)"
             : "border border-(--color-border-low) bg-white hover:border-(--color-border)"
@@ -174,15 +174,26 @@ function PaymentCard({
     >
       <PaymentLogoChip method={method} />
       <span className="flex min-w-0 flex-1 items-center gap-3">
-        <span className="font-[family-name:var(--font-heading)] truncate text-base leading-6 text-(--color-text-secondary)">
-          {method.name}
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span
+            className={`truncate font-[family-name:var(--font-heading)] text-base leading-6 ${
+              disabled ? "text-(--color-text-disabled)" : "text-(--color-text-secondary)"
+            }`}
+          >
+            {method.name}
+          </span>
+          {disabled && (
+            <span className="truncate text-sm leading-5 text-(--color-promotion)">
+              {formatLimitViolation(violation)}
+            </span>
+          )}
         </span>
-        <span className="ml-auto whitespace-nowrap font-[family-name:var(--font-heading)] text-sm leading-6 text-(--color-text-secondary)">
-          {disabled
-            ? formatLimitViolation(violation)
-            : fee > 0
-              ? formatPriceIDR(fee)
-              : "Gratis"}
+        <span
+          className={`ml-auto whitespace-nowrap font-[family-name:var(--font-heading)] text-sm leading-6 ${
+            disabled ? "text-(--color-text-disabled)" : "text-(--color-text-secondary)"
+          }`}
+        >
+          {fee > 0 ? formatPriceIDR(fee) : "Gratis"}
         </span>
       </span>
     </button>
@@ -192,8 +203,8 @@ function PaymentCard({
 function formatLimitViolation(v: PaymentLimitViolation | null): string {
   if (!v) return "";
   return v.type === "below_min"
-    ? `Min ${formatPriceIDR(v.limit)}`
-    : `Maks ${formatPriceIDR(v.limit)}`;
+    ? `Min. Pembayaran ${formatPriceIDR(v.limit)}`
+    : `Maks. Pembayaran ${formatPriceIDR(v.limit)}`;
 }
 
 function PaymentLogoChip({ method }: { method: PaymentMethod }) {
