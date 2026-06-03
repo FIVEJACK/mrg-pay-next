@@ -88,7 +88,6 @@ export default async function ProductIframePage({ searchParams }: PageProps) {
           gameId={gameId}
           itemTypes={itemTypes}
           initialItemTypeId={initialItemTypeId}
-          scopeItemTypeId={fallbackItemTypeId}
           attributes={attributes ?? []}
           servers={gameInfo?.server ?? []}
           serverLabel={gameInfo?.server_label ?? null}
