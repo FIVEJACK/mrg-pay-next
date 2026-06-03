@@ -46,7 +46,7 @@ type Props = {
   filters: Filters;
 };
 
-const PER_PAGE = 12;
+const PER_PAGE = 20;
 
 export function ProductListClient({
   hashCode,
@@ -67,15 +67,7 @@ export function ProductListClient({
 
   const [productList, setProductList] = useState<ProductListData | null>(null);
   const [productsLoading, setProductsLoading] = useState(true);
-  /**
-   * The gateway uses cursor pagination (`next_page` only — no global total).
-   * We track the highest page we've ever seen as the user navigates so the
-   * numbered pager can grow honestly: page 1 with a next_page shows [1] [2];
-   * jump to page 5 and we know there are at least 5 pages, etc.
-   */
-  const [discoveredMaxPage, setDiscoveredMaxPage] = useState(1);
-
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const activeItemType = itemTypes.find((t) => t.id === activeItemTypeId);
 
@@ -131,9 +123,6 @@ export function ProductListClient({
       .then((v) => {
         if (cancelled) return;
         setProductList(v);
-        const cur = v?.current_page ?? filters.page;
-        const hasNext = v?.next_page != null;
-        setDiscoveredMaxPage((prev) => Math.max(prev, cur + (hasNext ? 1 : 0)));
       })
       .catch(() => !cancelled && setProductList(null))
       .finally(() => !cancelled && setProductsLoading(false));
@@ -188,7 +177,6 @@ export function ProductListClient({
     };
     setActiveItemTypeId(id);
     setFilters(reset);
-    setDiscoveredMaxPage(1);
     setSelectedProduct(null);
     syncUrl(id, reset);
   }
@@ -196,7 +184,6 @@ export function ProductListClient({
   function handleChangeFilters(updates: Partial<Filters>) {
     const next: Filters = { ...filters, ...updates, page: 1 };
     setFilters(next);
-    setDiscoveredMaxPage(1);
     setSelectedProduct(null);
     syncUrl(activeItemTypeId, next);
   }
@@ -208,13 +195,12 @@ export function ProductListClient({
   }
 
   const products = productList?.data ?? [];
-  // `total_item` from the gateway is the count of items in THIS response, not
-  // a global total (cursor pagination). Display it as the visible-on-this-page
-  // count.
   const totalItem = productList?.total_item ?? products.length;
-  // Display total = gateway's `total_page` (rarely set) → otherwise our
-  // monotonically-growing `discoveredMaxPage`. Always at least 1.
-  const totalPages = Math.max(productList?.total_page ?? 0, discoveredMaxPage, 1);
+
+  const itemPerPage = productList?.item_per_page ?? PER_PAGE;
+  const totalPages =
+    productList?.total_page ??
+    (totalItem > 0 ? Math.ceil(totalItem / itemPerPage) : 1);
   const groups = detail?.item_info_group ?? [];
 
   return (
