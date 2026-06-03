@@ -38,8 +38,6 @@ type Props = {
   gameId: number;
   itemTypes: ItemType[];
   initialItemTypeId: number;
-  /** The item_type_id encoded in the hash. Attribute filters are valid only for this type. */
-  scopeItemTypeId: number;
   /** Product-attribute configuration (b2b2c-scoped). */
   attributes: B2b2cAttribute[];
   servers: Server[];
@@ -55,7 +53,6 @@ export function ProductListClient({
   gameId,
   itemTypes,
   initialItemTypeId,
-  scopeItemTypeId,
   attributes,
   servers,
   serverLabel,
@@ -110,10 +107,9 @@ export function ProductListClient({
     const ctrl = new AbortController();
     let cancelled = false;
     setProductsLoading(true);
-    // Attributes are b2b2c-scoped: only send them while on the hash-decoded item type.
-    const rawAttributes =
-      activeItemTypeId === scopeItemTypeId ? filters.attributes : {};
-    const attributePayload = buildAttributePayload(rawAttributes, attributes);
+    const scopedAttributes = attributes.filter((a) => a.item_type_id === activeItemTypeId);
+    const rawAttributes = scopedAttributes.length > 0 ? filters.attributes : {};
+    const attributePayload = buildAttributePayload(rawAttributes, scopedAttributes);
     const hasAttributePayload = Object.keys(attributePayload).length > 0;
 
     partnerBrowserApi
@@ -149,7 +145,6 @@ export function ProductListClient({
     hashCode,
     gameId,
     activeItemTypeId,
-    scopeItemTypeId,
     filters.itemInfoGroupId,
     filters.itemInfoId,
     filters.serverId,
@@ -194,6 +189,7 @@ export function ProductListClient({
     setActiveItemTypeId(id);
     setFilters(reset);
     setDiscoveredMaxPage(1);
+    setSelectedProduct(null);
     syncUrl(id, reset);
   }
 
@@ -201,6 +197,7 @@ export function ProductListClient({
     const next: Filters = { ...filters, ...updates, page: 1 };
     setFilters(next);
     setDiscoveredMaxPage(1);
+    setSelectedProduct(null);
     syncUrl(activeItemTypeId, next);
   }
 
@@ -262,7 +259,7 @@ export function ProductListClient({
           servers={hasServer ? servers : []}
           serverLabel={serverLabel}
           serverId={filters.serverId}
-          attributes={activeItemTypeId === scopeItemTypeId ? attributes : []}
+          attributes={attributes.filter((a) => a.item_type_id === activeItemTypeId)}
           attributeValues={filters.attributes}
           keyword={filters.keyword}
           sort={filters.sort}
