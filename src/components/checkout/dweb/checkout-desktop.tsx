@@ -13,6 +13,7 @@ import type {
   Product,
   RequiredInfoField,
 } from "@/lib/partner-api";
+import { addRecentEmail, getRecentEmails } from "@/lib/recent-emails";
 
 import { BuyerInfoCard } from "@/components/checkout/buyer-info-card";
 import { OrderSummaryCard } from "@/components/checkout/order-summary-card";
@@ -41,6 +42,10 @@ export function CheckoutDesktop({
 }: CheckoutViewProps) {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [recentEmails, setRecentEmails] = useState<string[]>([]);
+  useEffect(() => {
+    setRecentEmails(getRecentEmails());
+  }, []);
 
   const [requiredInfoFields, setRequiredInfoFields] = useState<RequiredInfoField[]>([]);
   const [requiredInfoLoading, setRequiredInfoLoading] = useState(true);
@@ -186,9 +191,8 @@ export function CheckoutDesktop({
     setSubmitting(true);
     try {
       const result = await partnerBrowserApi.createOrder(body, { hashCode });
-      // The response is doubly-enveloped: redirect URL lives at the outer
-      // `direct_payment.checkoutUrl` (or its `gateway.url` fallback). The
-      // inner `data.direct_payment` is typically the empty placeholder.
+      // Order created successfully — remember this email for next time.
+      addRecentEmail(email);
       const redirect =
         result?.direct_payment?.checkoutUrl ||
         result?.direct_payment?.gateway?.url ||
@@ -223,7 +227,12 @@ export function CheckoutDesktop({
   return (
     <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-8 px-6 py-8 lg:grid-cols-[minmax(0,1fr)_427px] lg:px-12 lg:py-10">
       <div className="flex flex-col gap-6">
-        <BuyerInfoCard email={email} onEmailChange={setEmail} error={emailError} />
+        <BuyerInfoCard
+          email={email}
+          onEmailChange={setEmail}
+          error={emailError}
+          recentEmails={recentEmails}
+        />
 
         <OrderSummaryCard
           productName={product.name}
