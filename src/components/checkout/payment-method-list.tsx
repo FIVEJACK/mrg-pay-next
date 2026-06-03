@@ -197,13 +197,11 @@ function formatLimitViolation(v: PaymentLimitViolation | null): string {
 }
 
 function PaymentLogoChip({ method }: { method: PaymentMethod }) {
-  // Most payment-method records ship with an icon URL. Fall back to a text chip
-  // built from the method's name when one isn't present.
-  if (method.icon_url) {
+  if (method.media_url) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={method.icon_url}
+        src={method.media_url}
         alt=""
         className="h-8 w-14 shrink-0 object-contain"
         loading="lazy"

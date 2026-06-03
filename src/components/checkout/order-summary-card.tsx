@@ -84,7 +84,7 @@ export function OrderSummaryCard({
                 aria-label="Kurangi jumlah"
                 disabled={decDisabled}
                 onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
-                className="flex size-11 items-center justify-center rounded-l-2xl border border-r-0 border-(--color-border) bg-white text-(--color-text-body) transition disabled:cursor-not-allowed disabled:opacity-40 hover:bg-(--color-bg-subtle)"
+                className="flex size-11 items-center justify-center rounded-l-2xl border border-r-0 border-(--color-border) bg-white text-(--color-text-body) transition enabled:hover:bg-(--color-bg-subtle) disabled:cursor-not-allowed disabled:text-(--color-text-disabled)"
               >
                 <MinusIcon className="size-6" />
               </button>
@@ -108,7 +108,7 @@ export function OrderSummaryCard({
                 onClick={() =>
                   onQuantityChange(maxQuantity ? Math.min(maxQuantity, quantity + 1) : quantity + 1)
                 }
-                className="flex size-11 items-center justify-center rounded-r-2xl border border-l-0 border-(--color-border) bg-white text-(--color-text-body) transition disabled:cursor-not-allowed disabled:opacity-40 hover:bg-(--color-bg-subtle)"
+                className="flex size-11 items-center justify-center rounded-r-2xl border border-l-0 border-(--color-border) bg-white text-(--color-text-body) transition enabled:hover:bg-(--color-bg-subtle) disabled:cursor-not-allowed disabled:text-(--color-text-disabled)"
               >
                 <PlusIcon className="size-6" />
               </button>

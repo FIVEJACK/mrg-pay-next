@@ -222,7 +222,7 @@ export type PaymentMethod = {
   currency?: string;
   payment_method_code?: string;
   payment_method_fee?: PaymentMethodFeeTier[];
-  icon_url?: string | null;
+  media_url?: string | null;
   is_instant?: 0 | 1;
   is_maintenance?: 0 | 1;
   minimum_payment_limit?: number;

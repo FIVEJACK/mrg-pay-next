@@ -37,7 +37,19 @@ export function PaymentDetailSidebar({
           label={
             <span className="flex items-center gap-1">
               Biaya Admin
-              <InfoIcon className="size-5 text-(--color-text-subdued)" />
+              <span className="group relative inline-flex cursor-help">
+                <InfoIcon className="size-5 text-(--color-text-subdued)" />
+                {/* Hover-only tooltip. Right-anchored so it expands leftward and
+                    never overflows the viewport edge (the sidebar hugs the right). */}
+                <span
+                  role="tooltip"
+                  className="pointer-events-none absolute top-full right-0 z-30 mt-2 hidden w-64 rounded-xl bg-(--color-text-title) px-3 py-2 font-[family-name:var(--font-body)] text-xs leading-5 font-normal text-white shadow-lg group-hover:block"
+                >
+                  Biaya ini mencakup biaya pemrosesan pembayaran dari pihak
+                  ketiga dan membantu kami terus meningkatkan layanan agar
+                  selalu memberikan yang terbaik untuk kamu.
+                </span>
+              </span>
             </span>
           }
           value={formatPriceIDR(adminFee)}
