@@ -20,6 +20,11 @@ const FEATURED = [
     name: "Roblox",
     subtitle: "Roblox — sample B2B2C scope",
     hashCode: '367819938deb4a30e2854e9b044dc039cc0238d54303176e7806f81b35125478c409472b866e2762e8b449b6336f0929042b93032d3f4d6742898ba9cfbc6ce5d3eadec82be8ad2737e5fdca90e6705d95ab9af7d6e08795d2ec3aa1206f',
+  },
+  {
+    name:"World of Warcraft",
+    subtitle: "WoW — sample B2B2C scope",
+    hashCode: 'eb811776894465fe3eb17fcdd42cc0b89f1a01fb06e56f50946075c4a60736e8b53ca0c24ff0b1fba017ef304ad1b235232dc363a4f06ec5c5e646782280b66cb19d94c9e858ae66e7603c31054e30aceb1d6c68bee1f0a0752a4ec8a9f5fd',
   }
 ];
 
