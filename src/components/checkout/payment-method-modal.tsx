@@ -276,10 +276,10 @@ function ModalPaymentCard({
             : "border border-(--color-border-low) bg-white hover:border-(--color-border)"
       }`}
     >
-      {method.icon_url ? (
+      {method.media_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={method.icon_url}
+          src={method.media_url}
           alt=""
           className="h-8 w-14 shrink-0 object-contain"
           loading="lazy"
