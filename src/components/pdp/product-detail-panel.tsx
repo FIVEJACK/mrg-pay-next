@@ -22,7 +22,9 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
   const normalPrice = product.competitor_price ?? null;
   const discount = computeDiscountPct(product.price, normalPrice);
   const itemTypeName = product.item_type?.name ?? "";
-  const description = (product as Product & { description?: string }).description?.trim() ?? "";
+  const description = ((product as Product & { description?: string }).description ?? "")
+    .replace(/<[^>]*>/g, "")
+    .trim();
 
   return (
     <aside
