@@ -91,16 +91,21 @@ export function OrderSummaryCard({
                 <MinusIcon className="size-6" />
               </button>
               <input
-                type="number"
-                min={1}
-                max={maxQuantity}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={quantity}
                 onChange={(e) => {
-                  const n = Number(e.target.value);
+                  // Integer-only: strip everything but digits, so decimals
+                  // ("1.5"), exponents ("1e3"), signs, and letters can't enter
+                  // the field — covers both typing and paste.
+                  const digits = e.target.value.replace(/[^0-9]/g, "");
+                  if (digits === "") return;
+                  const n = parseInt(digits, 10);
                   if (!Number.isFinite(n) || n < 1) return;
                   onQuantityChange(maxQuantity ? Math.min(maxQuantity, n) : n);
                 }}
-                className="h-11 w-full appearance-none border-y border-(--color-border) bg-white text-center text-base leading-6 text-(--color-text-body) outline-none focus:border-(--color-brand) [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                className="h-11 w-full appearance-none border-y border-(--color-border) bg-white text-center text-base leading-6 text-(--color-text-body) outline-none focus:border-(--color-brand)"
                 aria-label="Jumlah"
               />
               <button
