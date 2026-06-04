@@ -3,7 +3,6 @@
 import { useInvoice, type InvoiceViewProps } from "@/components/invoice/use-invoice";
 
 import { ChatPanel } from "@/components/invoice/chat-panel";
-import { InvoiceBreadcrumb } from "@/components/invoice/invoice-breadcrumb";
 import { OrderDetailCard } from "@/components/invoice/order-detail-card";
 import { PaymentDetailCard } from "@/components/invoice/payment-detail-card";
 import { SupportCard } from "@/components/invoice/support-card";
@@ -22,10 +21,7 @@ export function InvoiceDesktop(props: InvoiceViewProps) {
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-6 py-6 lg:px-12">
-      <InvoiceBreadcrumb
-        transactionNumber={transaction.transaction_number ?? `#${transaction.id}`}
-      />
-      <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_506px] lg:gap-x-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_506px] lg:gap-x-8">
         <div className="flex flex-col gap-6">
           <TransactionStatusCard state={state} transaction={transaction} />
           {state === "on_process" && order && order.seller_id != null && (
@@ -51,8 +47,7 @@ export function InvoiceDesktop(props: InvoiceViewProps) {
 function LoadingShell() {
   return (
     <div className="mx-auto w-full max-w-[1440px] px-6 py-6 lg:px-12">
-      <div className="h-5 w-64 animate-pulse rounded bg-(--color-border-low)" />
-      <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_506px] lg:gap-x-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_506px] lg:gap-x-8">
         <div className="flex flex-col gap-6">
           <div className="h-48 animate-pulse rounded-2xl border border-(--color-border-low) bg-white" />
           <div className="h-[480px] animate-pulse rounded-2xl border border-(--color-border-low) bg-white" />

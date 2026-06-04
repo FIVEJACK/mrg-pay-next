@@ -30,9 +30,11 @@ export function CheckoutMobile(props: CheckoutViewProps) {
     paymentError,
     effectivePaymentId,
     setSelectedPaymentId,
+    unitPrice,
     subtotal,
     selectedFee,
     total,
+    wholesaleTier,
     submitting,
     submitError,
     handleSubmit,
@@ -55,7 +57,8 @@ export function CheckoutMobile(props: CheckoutViewProps) {
           productName={product.name}
           productSubtitle={productSubtitle}
           productImageUrl={productImageUrl}
-          unitPrice={product.price}
+          unitPrice={unitPrice}
+          wholesale={wholesaleTier != null}
           quantity={quantity}
           maxQuantity={stock}
           onQuantityChange={setQuantity}

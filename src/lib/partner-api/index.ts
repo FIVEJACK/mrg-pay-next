@@ -3,6 +3,8 @@ export type { B2b2cAttribute } from "./client";
 export { calculatePaymentFee, checkPaymentMethodLimit, selectPaymentFeeTier } from "./fees";
 export type { PaymentLimitViolation } from "./fees";
 export { pickGameLogo, pickItemTypeIcon, pickProductCoverImage } from "./images";
+export { resolveWholesalePrice } from "./wholesale";
+export type { WholesalePrice } from "./wholesale";
 export type {
   ChatTokenResponse,
   CreateOrderBody,
@@ -20,6 +22,7 @@ export type {
   PaymentMethod,
   PaymentMethodFeeTier,
   Product,
+  ProductWholesaleTier,
   ProductListData,
   ProductListQuery,
   RequiredInfoField,

@@ -19,7 +19,7 @@ export function InvoiceBanner() {
   }
 
   return (
-    <div className="bg-[#F26B1E] text-white">
+    <div className="sticky top-16 z-10 bg-[#F26B1E] text-white">
       <div className="mx-auto flex max-w-[1440px] items-center justify-center gap-4 px-6 py-3 lg:px-12">
         <p className="flex items-center gap-2 text-sm leading-5">
           <WarningIcon className="size-5 shrink-0" />
