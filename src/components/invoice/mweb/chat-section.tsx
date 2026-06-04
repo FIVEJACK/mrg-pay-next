@@ -48,7 +48,13 @@ export function ChatSection({
     setOpen(false);
   }
 
-  const lastMessage = messages[messages.length - 1];
+  // Keep the preview body a fixed height (matching the Figma chat section) and
+  // anchor it to the latest message, so it doesn't grow with the conversation.
+  const previewRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = previewRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages]);
 
   return (
     <section className="flex w-full flex-col bg-white">
@@ -58,14 +64,19 @@ export function ChatSection({
         </h2>
       </header>
 
-      <div className="flex flex-col gap-3 px-4 py-4">
+      <div
+        ref={previewRef}
+        className="flex h-[232px] flex-col gap-3 overflow-y-auto px-4 py-4"
+      >
         <p className="text-center text-xs leading-4 text-(--color-text-subdued)">
           Mohon untuk tidak berikan data pribadi seperti nomor HP atau alamat.
         </p>
         <p className="text-center text-xs font-semibold text-(--color-text-subdued)">
           Hari ini
         </p>
-        {lastMessage && <ChatBubble message={lastMessage} />}
+        {messages.map((msg) => (
+          <ChatBubble key={msg.id} message={msg} />
+        ))}
       </div>
 
       <div className="border-t border-(--color-border-low) px-4 py-4">

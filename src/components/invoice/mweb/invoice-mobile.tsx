@@ -2,7 +2,6 @@
 
 import { useInvoice, type InvoiceViewProps } from "@/components/invoice/use-invoice";
 
-import { InvoiceBreadcrumb } from "@/components/invoice/invoice-breadcrumb";
 import { OrderDetailCard } from "@/components/invoice/order-detail-card";
 import { PaymentDetailCard } from "@/components/invoice/payment-detail-card";
 import { SupportCard } from "@/components/invoice/support-card";
@@ -22,12 +21,6 @@ export function InvoiceMobile(props: InvoiceViewProps) {
 
   return (
     <div className="mx-auto flex w-full max-w-[640px] flex-col gap-2">
-      <div className="px-4 py-3">
-        <InvoiceBreadcrumb
-          transactionNumber={transaction.transaction_number ?? `#${transaction.id}`}
-        />
-      </div>
-
       <TransactionStatusCard bare state={state} transaction={transaction} />
 
       {showChat && (
