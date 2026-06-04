@@ -82,7 +82,7 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
   const allImages = rawImages.length > 0 ? rawImages : cover ? [cover] : [];
 
   const normalPrice = product?.competitor_price ?? null;
-  const discount = product ? computeDiscountPct(product.price, normalPrice) : null;
+  const discount = product ? computeDiscountPct(product.seller_price, normalPrice) : null;
   const itemTypeName = product?.item_type?.name ?? "";
   const description = (
     (product as (Product & { description?: string }) | null)?.description ?? ""
@@ -181,7 +181,7 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
                 </h2>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <span className="text-lg font-bold text-(--color-promotion)">
-                    {formatPriceIDR(product.price)}
+                    {formatPriceIDR(product.seller_price)}
                   </span>
                   {normalPrice && discount !== null && (
                     <>

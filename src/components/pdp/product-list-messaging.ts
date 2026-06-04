@@ -77,7 +77,7 @@ export function postProductSelection(
     payload: {
       productId: product.id,
       productName: product.name,
-      productPrice: product.price,
+      productPrice: product.seller_price ?? product.price,
       itemInfoName: itemInfo?.name ?? itemInfo?.slug ?? null,
       serverName: product.server_name ?? null,
       itemTypeId: product.item_type_id ?? fallbackItemTypeId,

@@ -50,10 +50,13 @@ export function BottomSheet({ renderTrigger, renderContent }: BottomSheetProps) 
   }, []);
 
   function close() {
+    clearTimeout(closeTimerRef.current ?? undefined);
+    closeTimerRef.current = null;
     setClosing(true);
     closeTimerRef.current = setTimeout(() => {
       setOpen(false);
       setClosing(false);
+      closeTimerRef.current = null;
     }, CLOSE_DURATION);
   }
 
@@ -91,8 +94,8 @@ export function BottomSheet({ renderTrigger, renderContent }: BottomSheetProps) 
               <div className="flex justify-center py-3" aria-hidden="true">
                 <div className="h-1 w-10 rounded-full bg-(--color-border)" />
               </div>
-              {/* Content — grid cell has explicit height, so h-full in child resolves correctly */}
-              <div className="overflow-hidden">
+              {/* Content — h-full makes the height definite so children using h-full resolve correctly */}
+              <div className="h-full overflow-hidden">
                 {renderContent({ close })}
               </div>
             </div>

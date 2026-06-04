@@ -119,6 +119,13 @@ export function FilterBarMobile({
       onRemove: () => onChange({ serverId: undefined }),
     });
   }
+  if (keyword) {
+    activeChips.push({
+      key: "keyword",
+      label: `Pencarian: ${keyword}`,
+      onRemove: () => onChange({ keyword: undefined }),
+    });
+  }
   for (const [idKey, raw] of Object.entries(attributeValues)) {
     if (!raw) continue;
     const attr = attributeFilters.find((a) => String(a.id) === idKey);
@@ -282,6 +289,7 @@ export function FilterBarMobile({
                 itemInfoId: undefined,
                 serverId: undefined,
                 attributes: {},
+                keyword: undefined,
               })
             }
             className="text-xs font-bold text-(--color-brand)"

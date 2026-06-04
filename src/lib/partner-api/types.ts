@@ -96,7 +96,7 @@ export type Product = {
   price: number;
   market_price?: number | null;
   competitor_price?: number | null;
-  seller_price?: number | string;
+  seller_price?: number | null;
   seller_currency?: string;
   game?: { id: number; name: string; slug?: string };
   game_id?: number;

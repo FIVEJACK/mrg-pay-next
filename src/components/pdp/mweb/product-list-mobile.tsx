@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ProductDetailSheet } from "@/components/pdp/mweb/product-detail-sheet";
 import {
   isProductListMessage,
@@ -13,14 +13,17 @@ import type { ProductListViewProps } from "@/components/pdp/dweb/product-list-de
 
 export function ProductListMobile({ hashCode }: ProductListViewProps) {
   const router = useRouter();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [selected, setSelected] = useState<ProductSelectedPayload | null>(null);
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
       if (event.origin !== window.location.origin) return;
+      if (event.source !== iframeRef.current?.contentWindow) return;
       if (!isProductListMessage(event.data)) return;
 
       if (event.data.type === PRODUCT_SELECTED) {
+        if (event.data.payload.hashCode !== hashCode) return;
         setSelected(event.data.payload);
       } else if (event.data.type === PRODUCT_DESELECTED) {
         setSelected(null);
@@ -28,13 +31,13 @@ export function ProductListMobile({ hashCode }: ProductListViewProps) {
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, []);
+  }, [hashCode]);
 
   function handleBuy() {
     if (!selected) return;
     const qs = new URLSearchParams({
       product_id: String(selected.productId),
-      hash_code: selected.hashCode,
+      hash_code: hashCode,
     });
     if (selected.itemTypeId != null) qs.set("item_type_id", String(selected.itemTypeId));
     if (selected.gameId != null) qs.set("game_id", String(selected.gameId));
@@ -46,6 +49,7 @@ export function ProductListMobile({ hashCode }: ProductListViewProps) {
   return (
     <div className="relative flex min-h-[100dvh] flex-col">
       <iframe
+        ref={iframeRef}
         src={iframeSrc}
         title="Product list"
         className="min-h-[100dvh] w-full flex-1 border-0"
