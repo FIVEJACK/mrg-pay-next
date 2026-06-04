@@ -41,7 +41,7 @@ export function ProductListMobile({ hashCode }: ProductListViewProps) {
     router.push(`/checkout?${qs.toString()}`);
   }
 
-  const iframeSrc = `/iframe/product?hash_code=${encodeURIComponent(hashCode)}&mobile=1`;
+  const iframeSrc = `/iframe/product?hash_code=${encodeURIComponent(hashCode)}`;
 
   return (
     <div className="relative flex min-h-[100dvh] flex-col">

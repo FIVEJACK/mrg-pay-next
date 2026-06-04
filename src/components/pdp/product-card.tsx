@@ -16,13 +16,6 @@ export function ProductCard({ product, selected, mobile, onClick }: ProductCardP
   // competitor_price = normal/reference price; price = (potentially discounted) selling price.
   const normalPrice = product.competitor_price ?? null;
   const discount = computeDiscountPct(product.price, normalPrice);
-  const deliveryLabel =
-    product.use_instant_delivery === 1
-      ? "Instant Delivery"
-      : product.use_auto_delivery === 1
-        ? "Direct Gift"
-        : "Face to Face";
-
   const soldCount = product.order_record?.successful_order_count ?? 0;
 
   return (
@@ -56,7 +49,7 @@ export function ProductCard({ product, selected, mobile, onClick }: ProductCardP
         <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-(--color-text-title)">
           {product.name}
         </h3>
-        <p className="text-sm text-(--color-text-subdued)">{deliveryLabel}</p>
+        {/* <p className="text-sm text-(--color-text-subdued)">{deliveryLabel}</p> */}
 
         <div className="mt-auto flex flex-col gap-0.5 pt-2">
           {mobile ? (

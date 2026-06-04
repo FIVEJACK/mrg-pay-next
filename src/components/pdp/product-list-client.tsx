@@ -8,6 +8,7 @@ import { Pagination } from "@/components/pdp/pagination";
 import { ProductDetailPanel } from "@/components/pdp/product-detail-panel";
 import { ProductGrid } from "@/components/pdp/product-grid";
 import {
+  FilterBarMobileSkeleton,
   FilterBarSkeleton,
   ProductGridSkeleton,
   ResultsCountSkeleton,
@@ -236,7 +237,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
       </div>
 
       {detailLoading ? (
-        <FilterBarSkeleton />
+        mobile ? <FilterBarMobileSkeleton /> : <FilterBarSkeleton />
       ) : mobile ? (
         <FilterBarMobile
           hashCode={hashCode}
@@ -287,7 +288,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
       <div className="flex gap-6 pt-3">
         <div className="min-w-0 flex-1">
           {productsLoading ? (
-            <ProductGridSkeleton count={PER_PAGE} />
+            <ProductGridSkeleton count={PER_PAGE} mobile={mobile} />
           ) : (
             <div className="animate-fade-in">
               <ProductGrid
