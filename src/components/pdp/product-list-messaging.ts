@@ -20,6 +20,8 @@ export type ProductSelectedPayload = {
   itemTypeId: number | null;
   gameId: number | null;
   hashCode: string;
+  /** Full product object — used by the mobile ProductDetailSheet to render without a re-fetch. */
+  product: Product;
 };
 
 export type ProductSelectedMessage = {
@@ -81,6 +83,7 @@ export function postProductSelection(
       itemTypeId: product.item_type_id ?? fallbackItemTypeId,
       gameId: product.game_id ?? null,
       hashCode,
+      product,
     },
   };
   window.parent.postMessage(msg, window.location.origin);

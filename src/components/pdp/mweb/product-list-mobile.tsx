@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-import { FloatingPurchaseBar } from "@/components/pdp/floating-purchase-bar";
+import { ProductDetailSheet } from "@/components/pdp/mweb/product-detail-sheet";
 import {
   isProductListMessage,
   PRODUCT_DESELECTED,
@@ -51,14 +50,11 @@ export function ProductListMobile({ hashCode }: ProductListViewProps) {
         title="Product list"
         className="min-h-[100dvh] w-full flex-1 border-0"
       />
-      {selected && (
-        <FloatingPurchaseBar
-          price={selected.productPrice}
-          itemInfoName={selected.itemInfoName}
-          serverName={selected.serverName}
-          onBuy={handleBuy}
-        />
-      )}
+      <ProductDetailSheet
+        payload={selected}
+        onClose={() => setSelected(null)}
+        onBuy={handleBuy}
+      />
     </div>
   );
 }

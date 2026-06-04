@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
-const CLOSE_DURATION = 300;
+const CLOSE_DURATION = 320;
 
 type BottomSheetProps = {
   renderTrigger: (props: {

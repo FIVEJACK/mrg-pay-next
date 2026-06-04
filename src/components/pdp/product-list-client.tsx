@@ -312,7 +312,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
           </div>
         </div>
 
-        {selectedProduct && (
+        {!mobile && selectedProduct && (
           <ProductDetailPanel
             product={selectedProduct}
             onClose={() => setSelectedProduct(null)}
@@ -320,7 +320,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
         )}
       </div>
 
-      {selectedProduct && (
+      {!mobile && selectedProduct && (
         // Spacer so iframe content can scroll past the parent's fixed purchase bar.
         <div aria-hidden="true" className="h-20" />
       )}
