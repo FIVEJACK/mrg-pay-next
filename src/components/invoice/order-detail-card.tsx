@@ -4,9 +4,10 @@ type OrderDetailCardProps = {
   transaction: TransactionDetail;
   /** Label for the user-identifier field (e.g. "Roblox Username"). */
   userIdLabel: string;
+  bare?: boolean;
 };
 
-export function OrderDetailCard({ transaction, userIdLabel }: OrderDetailCardProps) {
+export function OrderDetailCard({ transaction, userIdLabel, bare }: OrderDetailCardProps) {
   const order = transaction.orders[0];
   if (!order) return null;
 
@@ -14,7 +15,13 @@ export function OrderDetailCard({ transaction, userIdLabel }: OrderDetailCardPro
   const userId = requiredInfo?.user_id ?? "—";
 
   return (
-    <section className="flex w-full flex-col gap-4 rounded-2xl border border-(--color-border-low) bg-white p-6">
+    <section
+      className={
+        bare
+          ? "flex w-full flex-col gap-4 bg-white px-4 py-5"
+          : "flex w-full flex-col gap-4 rounded-2xl border border-(--color-border-low) bg-white p-6"
+      }
+    >
       <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
         Detail Pesanan
       </h2>
@@ -44,21 +51,29 @@ export function OrderDetailCard({ transaction, userIdLabel }: OrderDetailCardPro
       </div>
 
       <dl className="flex flex-col gap-3">
-        <Row label={userIdLabel} value={userId} />
-        <Row label="Jumlah" value={String(order.quantity)} />
-        <Row label="Email" value={order.buyer_email ?? "—"} />
+        <Row label={userIdLabel} value={userId} bare={bare} />
+        <Row label="Jumlah" value={String(order.quantity)} bare={bare} />
+        <Row label="Email" value={order.buyer_email ?? "—"} bare={bare} />
       </dl>
     </section>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value, bare }: { label: string; value: string; bare?: boolean }) {
   return (
     <div className="flex items-start gap-2">
-      <dt className="w-[200px] shrink-0 font-[family-name:var(--font-heading)] text-base leading-6 text-(--color-text-secondary)">
+      <dt
+        className={`shrink-0 font-[family-name:var(--font-heading)] text-base leading-6 text-(--color-text-secondary) ${
+          bare ? "" : "w-[200px]"
+        }`}
+      >
         {label}
       </dt>
-      <dd className="min-w-0 flex-1 font-[family-name:var(--font-heading)] truncate text-base leading-6 text-(--color-text-title)">
+      <dd
+        className={`min-w-0 flex-1 truncate font-[family-name:var(--font-heading)] text-base leading-6 text-(--color-text-title) ${
+          bare ? "text-right" : ""
+        }`}
+      >
         {value}
       </dd>
     </div>
