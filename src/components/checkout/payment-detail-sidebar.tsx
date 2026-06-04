@@ -2,7 +2,7 @@
 
 import { formatPriceIDR } from "@/lib/format";
 
-import { InfoIcon, ShieldFilledIcon } from "@/components/icon";
+import { ShieldFilledIcon } from "@/components/icon";
 
 type PaymentDetailSidebarProps = {
   subtotal: number;
@@ -33,27 +33,7 @@ export function PaymentDetailSidebar({
 
       <div className="flex flex-col gap-3">
         <Row label="Total Pesanan" value={formatPriceIDR(subtotal)} />
-        <Row
-          label={
-            <span className="flex items-center gap-1">
-              Biaya Admin
-              <span className="group relative inline-flex cursor-help">
-                <InfoIcon className="size-5 text-(--color-text-subdued)" />
-                {/* Hover-only tooltip. Right-anchored so it expands leftward and
-                    never overflows the viewport edge (the sidebar hugs the right). */}
-                <span
-                  role="tooltip"
-                  className="pointer-events-none absolute top-full right-0 z-30 mt-2 hidden w-64 rounded-xl bg-(--color-text-title) px-3 py-2 font-[family-name:var(--font-body)] text-xs leading-5 font-normal text-white shadow-lg group-hover:block"
-                >
-                  Biaya ini mencakup biaya pemrosesan pembayaran dari pihak
-                  ketiga dan membantu kami terus meningkatkan layanan agar
-                  selalu memberikan yang terbaik untuk kamu.
-                </span>
-              </span>
-            </span>
-          }
-          value={formatPriceIDR(adminFee)}
-        />
+        <Row label="Biaya Admin" value={formatPriceIDR(adminFee)} />
         <div className="h-px w-full bg-(--color-border)" />
         <Row label="Total Pembayaran" value={formatPriceIDR(total)} emphasized />
       </div>

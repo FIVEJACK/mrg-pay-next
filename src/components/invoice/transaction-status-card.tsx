@@ -13,24 +13,33 @@ export type InvoiceState = "pending" | "on_process" | "completed" | "expired";
 type Props = {
   state: InvoiceState;
   transaction: TransactionDetail;
+  bare?: boolean;
 };
 
-export function TransactionStatusCard({ state, transaction }: Props) {
-  if (state === "pending") return <PendingCard transaction={transaction} />;
-  if (state === "expired") return <ExpiredCard transaction={transaction} />;
-  return <OnProcessCard transaction={transaction} state={state} />;
+function wrapClass(bare?: boolean) {
+  return bare
+    ? "flex w-full flex-col gap-4 bg-white px-4 py-5"
+    : "flex w-full flex-col gap-4 rounded-2xl border border-(--color-border-low) bg-white p-6";
+}
+
+export function TransactionStatusCard({ state, transaction, bare }: Props) {
+  if (state === "pending") return <PendingCard transaction={transaction} bare={bare} />;
+  if (state === "expired") return <ExpiredCard transaction={transaction} bare={bare} />;
+  return <OnProcessCard transaction={transaction} state={state} bare={bare} />;
 }
 
 function OnProcessCard({
   transaction,
   state,
+  bare,
 }: {
   transaction: TransactionDetail;
   state: "on_process" | "completed";
+  bare?: boolean;
 }) {
   const isCompleted = state === "completed";
   return (
-    <section className="flex w-full flex-col gap-4 rounded-2xl border border-(--color-border-low) bg-white p-6">
+    <section className={wrapClass(bare)}>
       <header>
         <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
           {isCompleted ? "Transaksi selesai" : "Transaksi sedang diproses"}
@@ -56,7 +65,13 @@ function OnProcessCard({
   );
 }
 
-function PendingCard({ transaction }: { transaction: TransactionDetail }) {
+function PendingCard({
+  transaction,
+  bare,
+}: {
+  transaction: TransactionDetail;
+  bare?: boolean;
+}) {
   const total = toNumber(transaction.invoice_amount);
   const checkoutUrl =
     transaction.direct_payment?.checkoutUrl ??
@@ -65,7 +80,7 @@ function PendingCard({ transaction }: { transaction: TransactionDetail }) {
     null;
 
   return (
-    <section className="flex w-full flex-col gap-4 rounded-2xl border border-(--color-border-low) bg-white p-6">
+    <section className={wrapClass(bare)}>
       <header className="flex flex-wrap items-center gap-3">
         <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
           Bayar transaksi kamu, yuk!
@@ -128,9 +143,15 @@ function PendingCard({ transaction }: { transaction: TransactionDetail }) {
   );
 }
 
-function ExpiredCard({ transaction }: { transaction: TransactionDetail }) {
+function ExpiredCard({
+  transaction,
+  bare,
+}: {
+  transaction: TransactionDetail;
+  bare?: boolean;
+}) {
   return (
-    <section className="flex w-full flex-col gap-4 rounded-2xl border border-(--color-border-low) bg-white p-6">
+    <section className={wrapClass(bare)}>
       <header>
         <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
           Transaksi sudah kedaluwarsa

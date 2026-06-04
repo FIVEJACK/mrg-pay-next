@@ -1,24 +1,30 @@
 import { formatPriceIDR } from "@/lib/format";
 import type { TransactionDetail } from "@/lib/partner-api";
 
-import { InfoIcon } from "@/components/icon";
-
 type PaymentDetailCardProps = {
   transaction: TransactionDetail;
   /** Hide the "Metode Pembayaran" row when the page already surfaces it (e.g. on the Pending Payment hero card). */
   hidePaymentMethod?: boolean;
+  bare?: boolean;
 };
 
 export function PaymentDetailCard({
   transaction,
   hidePaymentMethod = false,
+  bare,
 }: PaymentDetailCardProps) {
   const subtotal = toNumber(transaction.total_order_value ?? transaction.total_buyer_order_value);
   const fee = toNumber(transaction.total_payment_fee);
   const total = toNumber(transaction.invoice_amount ?? subtotal + fee);
 
   return (
-    <section className="flex w-full flex-col gap-4 rounded-2xl border border-(--color-border-low) bg-white p-6">
+    <section
+      className={
+        bare
+          ? "flex w-full flex-col gap-4 bg-white px-4 py-5"
+          : "flex w-full flex-col gap-4 rounded-2xl border border-(--color-border-low) bg-white p-6"
+      }
+    >
       <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
         Detail Pembayaran
       </h2>
@@ -32,15 +38,7 @@ export function PaymentDetailCard({
           />
         )}
         <Row label="Total Pesanan" value={formatPriceIDR(subtotal)} />
-        <Row
-          label={
-            <span className="flex items-center gap-1">
-              Biaya Admin
-              <InfoIcon className="size-5 text-(--color-text-subdued)" />
-            </span>
-          }
-          value={formatPriceIDR(fee)}
-        />
+        <Row label="Biaya Admin" value={formatPriceIDR(fee)} />
         <div className="h-px w-full bg-(--color-border)" />
         <Row label="Total Pembayaran" value={formatPriceIDR(total)} emphasized />
       </div>
