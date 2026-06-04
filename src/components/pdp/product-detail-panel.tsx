@@ -20,7 +20,7 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
   const cover = pickProductCoverImage(product);
   // competitor_price = normal/reference price; price = (potentially discounted) selling price.
   const normalPrice = product.competitor_price ?? null;
-  const discount = computeDiscountPct(product.price, normalPrice);
+  const discount = computeDiscountPct(product.seller_price, normalPrice);
   const itemTypeName = product.item_type?.name ?? "";
   const description = ((product as Product & { description?: string }).description ?? "")
     .replace(/<[^>]*>/g, "")
@@ -76,7 +76,7 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
           </h2>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="text-xl font-bold text-(--color-promotion)">
-              {formatPriceIDR(product.price)}
+              {formatPriceIDR(product.seller_price)}
             </span>
             {normalPrice && discount !== null && (
               <>

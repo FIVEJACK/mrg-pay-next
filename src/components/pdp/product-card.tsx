@@ -15,7 +15,7 @@ export function ProductCard({ product, selected, mobile, onClick }: ProductCardP
   const cover = pickProductCoverImage(product);
   // competitor_price = normal/reference price; price = (potentially discounted) selling price.
   const normalPrice = product.competitor_price ?? null;
-  const discount = computeDiscountPct(product.price, normalPrice);
+  const discount = computeDiscountPct(product.seller_price, normalPrice);
   const soldCount = product.order_record?.successful_order_count ?? 0;
 
   return (
@@ -61,7 +61,7 @@ export function ProductCard({ product, selected, mobile, onClick }: ProductCardP
               )}
               <div className="flex flex-wrap items-center gap-1">
                 <span className="text-base font-bold text-(--color-promotion)">
-                  {formatPriceIDR(product.price)}
+                  {formatPriceIDR(product.seller_price)}
                 </span>
                 {discount !== null && (
                   <span className="rounded-sm bg-(--color-promotion) px-1 py-0.5 text-[11px] leading-[14px] text-white">
@@ -73,7 +73,7 @@ export function ProductCard({ product, selected, mobile, onClick }: ProductCardP
           ) : (
             <div className="flex flex-wrap items-center gap-1">
               <span className="text-base font-bold text-(--color-promotion)">
-                {formatPriceIDR(product.price)}
+                {formatPriceIDR(product.seller_price)}
               </span>
               {normalPrice && discount !== null && (
                 <span className="text-xs text-(--color-text-subdued) line-through">
