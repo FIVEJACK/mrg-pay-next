@@ -26,7 +26,7 @@ export function PaymentDetailSidebar({
   onSubmit,
 }: PaymentDetailSidebarProps) {
   return (
-    <aside className="sticky top-24 flex w-full max-w-[427px] flex-col gap-4 rounded-2xl border border-(--color-border-low) bg-white px-6 py-4">
+    <aside className="sticky top-24 flex w-full max-w-[427px] flex-col gap-4 self-start rounded-2xl border border-(--color-border-low) bg-white px-6 py-4">
       <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
         Detail Pembayaran
       </h2>

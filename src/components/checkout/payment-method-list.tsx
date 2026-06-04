@@ -16,10 +16,9 @@ type PaymentMethodListProps = {
   error: string | null;
   selectedId: number | null;
   onSelect: (id: number) => void;
-  /** Order subtotal — feeds the tiered `(amount + fixed_fee) * fixed_rate%` calc. */
-  amount: number;
-  /** How many methods to show before collapsing the rest behind "+N lainnya". */
-  initialVisibleCount?: number;
+amount: number;
+ initialVisibleCount?: number;
+  bare?: boolean;
 };
 
 function flatten(groups: PaymentGroup[] | null): PaymentMethod[] {
@@ -37,18 +36,26 @@ export function PaymentMethodList({
   onSelect,
   amount,
   initialVisibleCount = 3,
+  bare = false,
 }: PaymentMethodListProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const all = useMemo(() => flatten(groups), [groups]);
 
+  const sectionClass = `flex w-full flex-col gap-3 ${bare ? "bg-white px-4 py-5" : ""}`;
+  const cardWrapperClass = bare
+    ? ""
+    : "rounded-2xl border border-(--color-border-low) bg-white p-6";
+  // Mobile shows one column with radios; desktop keeps the two-column card grid.
+  const gridClass = bare ? "grid grid-cols-1 gap-3" : "grid grid-cols-1 gap-4 lg:grid-cols-2";
+
   if (loading) {
     return (
-      <section className="flex w-full flex-col gap-3">
+      <section className={sectionClass}>
         <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
           Metode Pembayaran
         </h2>
-        <div className="rounded-2xl border border-(--color-border-low) bg-white p-6">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className={cardWrapperClass}>
+          <div className={gridClass}>
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
@@ -63,11 +70,15 @@ export function PaymentMethodList({
 
   if (error) {
     return (
-      <section className="flex w-full flex-col gap-3">
+      <section className={sectionClass}>
         <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
           Metode Pembayaran
         </h2>
-        <div className="rounded-2xl border border-(--color-border-low) bg-white p-6 text-sm text-(--color-promotion)">
+        <div
+          className={`text-sm text-(--color-promotion) ${
+            bare ? "" : "rounded-2xl border border-(--color-border-low) bg-white p-6"
+          }`}
+        >
           Gagal memuat metode pembayaran: {error}
         </div>
       </section>
@@ -87,12 +98,12 @@ export function PaymentMethodList({
   const hidden = showAll ? [] : all.slice(initialVisibleCount);
 
   return (
-    <section className="flex w-full flex-col gap-3">
+    <section className={sectionClass}>
       <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
         Metode Pembayaran
       </h2>
-      <div className="rounded-2xl border border-(--color-border-low) bg-white p-6">
-        <div role="radiogroup" aria-label="Metode Pembayaran" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className={cardWrapperClass}>
+        <div role="radiogroup" aria-label="Metode Pembayaran" className={gridClass}>
           {visible.map((m) => {
             const violation = checkPaymentMethodLimit(m, amount);
             return (
@@ -102,6 +113,7 @@ export function PaymentMethodList({
                 fee={calculatePaymentFee(m, amount)}
                 selected={m.id === selectedId}
                 violation={violation}
+                showRadio={bare}
                 onSelect={() => onSelect(m.id)}
               />
             );
@@ -146,12 +158,14 @@ function PaymentCard({
   fee,
   selected,
   violation,
+  showRadio = false,
   onSelect,
 }: {
   method: PaymentMethod;
   fee: number;
   selected: boolean;
   violation: PaymentLimitViolation | null;
+  showRadio?: boolean;
   onSelect: () => void;
 }) {
   const disabled = violation != null;
@@ -195,6 +209,22 @@ function PaymentCard({
         >
           {fee > 0 ? formatPriceIDR(fee) : "Gratis"}
         </span>
+        {showRadio && (
+          <span
+            aria-hidden="true"
+            className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 ${
+              disabled
+                ? "border-(--color-border)"
+                : selected
+                  ? "border-(--color-brand)"
+                  : "border-(--color-border)"
+            }`}
+          >
+            {selected && !disabled && (
+              <span className="size-2.5 rounded-full bg-(--color-brand)" />
+            )}
+          </span>
+        )}
       </span>
     </button>
   );
