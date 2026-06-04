@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
+const CLOSE_DURATION = 300;
+
 type BottomSheetProps = {
   renderTrigger: (props: {
     open: boolean;
@@ -14,8 +16,10 @@ type BottomSheetProps = {
 
 export function BottomSheet({ renderTrigger, renderContent }: BottomSheetProps) {
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [mounted, setMounted] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -33,34 +37,56 @@ export function BottomSheet({ renderTrigger, renderContent }: BottomSheetProps) 
   useEffect(() => {
     if (!open) return;
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") close();
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
-  const close = () => setOpen(false);
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
+
+  function close() {
+    setClosing(true);
+    closeTimerRef.current = setTimeout(() => {
+      setOpen(false);
+      setClosing(false);
+    }, CLOSE_DURATION);
+  }
+
+  function handleOpen() {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    setClosing(false);
+    setOpen(true);
+  }
+
+  const visible = open || closing;
 
   return (
     <>
       {renderTrigger({
-        open,
+        open: open && !closing,
         ref: triggerRef,
-        onClick: () => setOpen((v) => !v),
+        onClick: () => (open ? close() : handleOpen()),
       })}
       {mounted &&
-        open &&
+        visible &&
         createPortal(
           <div className="fixed inset-0 z-50 flex flex-col justify-end">
             {/* Backdrop */}
             <div
-              className="absolute inset-0 animate-fade-in"
+              className={closing ? "animate-fade-out absolute inset-0" : "animate-fade-in absolute inset-0"}
               style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%)" }}
               onClick={close}
               aria-hidden="true"
             />
             {/* Sheet panel — grid gives the content row an explicit height so h-full resolves inside */}
-            <div className="animate-sheet-up relative grid h-[600px] max-h-[85dvh] grid-rows-[auto_minmax(0,1fr)] rounded-t-2xl bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.12)]">
+            <div
+              className={`${closing ? "animate-sheet-down" : "animate-sheet-up"} relative grid h-[600px] max-h-[85dvh] grid-rows-[auto_minmax(0,1fr)] rounded-t-2xl bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.12)]`}
+            >
               {/* Drag handle */}
               <div className="flex justify-center py-3" aria-hidden="true">
                 <div className="h-1 w-10 rounded-full bg-(--color-border)" />

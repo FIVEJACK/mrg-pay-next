@@ -79,7 +79,7 @@ export function RangeFilterPopover({
       aria-label={title}
       className={
         sheet
-          ? "flex flex-col overflow-hidden"
+          ? "flex h-full flex-col overflow-hidden"
           : "flex w-[380px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.15)]"
       }
     >
@@ -99,7 +99,7 @@ export function RangeFilterPopover({
         </div>
       )}
       {/* Body */}
-      <div className="px-4 py-3">
+      <div className="flex-1 px-4 py-3">
         <p className="mb-3 text-sm font-bold text-(--color-text-title)">{sectionLabel}</p>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
