@@ -1,17 +1,92 @@
 "use client";
 
-import { CheckoutDesktop, type CheckoutViewProps } from "@/components/checkout/dweb/checkout-desktop";
+import { useCheckout, type CheckoutViewProps } from "@/components/checkout/use-checkout";
 
-/**
- * Mobile (mweb) checkout view — STUB.
- *
- * The desktop view already collapses to a single column at small widths via its
- * Tailwind breakpoints, so for now we render it to keep mobile traffic working.
- * Build the dedicated mobile experience here (e.g. a sticky bottom checkout bar
- * instead of the right-hand `PaymentDetailSidebar`, step-by-step sections) and
- * drop the desktop delegation when ready. The buyer-state logic should be
- * lifted into a shared `useCheckout()` hook so both views consume it.
- */
+import { BuyerInfoCard } from "@/components/checkout/buyer-info-card";
+import { OrderSummaryCard } from "@/components/checkout/order-summary-card";
+import { PaymentMethodList } from "@/components/checkout/payment-method-list";
+
+import { CheckoutBottomBar } from "./checkout-bottom-bar";
+import { PaymentBreakdownCard } from "./payment-breakdown-card";
+
+
 export function CheckoutMobile(props: CheckoutViewProps) {
-  return <CheckoutDesktop {...props} />;
+  const { product, productImageUrl } = props;
+  const {
+    email,
+    setEmail,
+    emailError,
+    recentEmails,
+    requiredInfoFields,
+    requiredInfoLoading,
+    requiredInfoValues,
+    setRequiredInfoValue,
+    requiredInfoErrors,
+    quantity,
+    setQuantity,
+    stock,
+    paymentGroups,
+    paymentLoading,
+    paymentError,
+    effectivePaymentId,
+    setSelectedPaymentId,
+    subtotal,
+    selectedFee,
+    total,
+    submitting,
+    submitError,
+    handleSubmit,
+    productSubtitle,
+  } = useCheckout(props);
+
+  return (
+    <>
+      <div className="mx-auto flex w-full max-w-[640px] flex-col gap-2 pb-40">
+        <BuyerInfoCard
+          bare
+          email={email}
+          onEmailChange={setEmail}
+          error={emailError}
+          recentEmails={recentEmails}
+        />
+
+        <OrderSummaryCard
+          bare
+          productName={product.name}
+          productSubtitle={productSubtitle}
+          productImageUrl={productImageUrl}
+          unitPrice={product.price}
+          quantity={quantity}
+          maxQuantity={stock}
+          onQuantityChange={setQuantity}
+          requiredInfoFields={requiredInfoFields}
+          requiredInfoLoading={requiredInfoLoading}
+          requiredInfoValues={requiredInfoValues}
+          onRequiredInfoChange={setRequiredInfoValue}
+          requiredInfoErrors={requiredInfoErrors}
+        />
+
+        <PaymentMethodList
+          bare
+          groups={paymentGroups}
+          loading={paymentLoading}
+          error={paymentError}
+          selectedId={effectivePaymentId}
+          onSelect={setSelectedPaymentId}
+          amount={subtotal}
+        />
+
+        <PaymentBreakdownCard subtotal={subtotal} adminFee={selectedFee} total={total} />
+      </div>
+
+      <CheckoutBottomBar
+        total={total}
+        ctaLabel="Bayar"
+        ctaDisabled={paymentLoading || effectivePaymentId == null}
+        submitting={submitting}
+        errorMessage={submitError}
+        onSubmit={handleSubmit}
+      />
+    </>
+  );
 }

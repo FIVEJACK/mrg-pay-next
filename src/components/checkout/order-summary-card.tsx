@@ -17,15 +17,12 @@ type OrderSummaryCardProps = {
   quantity: number;
   maxQuantity?: number;
   onQuantityChange: (next: number) => void;
-  /** Schema for the buyer-provided fields, from /partner/v1/product/required-info. */
-  requiredInfoFields: RequiredInfoField[];
-  /** Currently loading the schema. */
+ requiredInfoFields: RequiredInfoField[];
   requiredInfoLoading?: boolean;
-  /** Current values, keyed by `field_name`. */
   requiredInfoValues: Record<string, string>;
   onRequiredInfoChange: (fieldName: string, value: string) => void;
-  /** Per-field error messages, keyed by `field_name`. */
   requiredInfoErrors?: Record<string, string>;
+  bare?: boolean;
 };
 
 export function OrderSummaryCard({
@@ -41,101 +38,131 @@ export function OrderSummaryCard({
   requiredInfoValues,
   onRequiredInfoChange,
   requiredInfoErrors,
+  bare = false,
 }: OrderSummaryCardProps) {
   const decDisabled = quantity <= 1;
   const incDisabled = maxQuantity !== undefined && quantity >= maxQuantity;
 
+  const productInfo = (
+    <div className="flex min-w-0 flex-1 items-start gap-3">
+      <div className="size-12 shrink-0 overflow-hidden rounded-lg border border-(--color-border) bg-(--color-bg-subtle)">
+        {productImageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={productImageUrl} alt="" className="size-full object-cover" loading="lazy" />
+        ) : null}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <p className="font-[family-name:var(--font-heading)] truncate text-base font-bold leading-6 text-(--color-text-title)">
+          {productName}
+        </p>
+        {productSubtitle && (
+          <p className="font-[family-name:var(--font-heading)] truncate text-sm leading-5 text-(--color-text-subdued)">
+            {productSubtitle}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+
+  const price = (
+    <p className="font-[family-name:var(--font-heading)] whitespace-nowrap text-right text-base font-bold leading-6 text-(--color-text-title)">
+      {formatPriceIDR(unitPrice)}
+    </p>
+  );
+
+  const stepper = (
+    <div className="flex h-11 w-[160px] items-stretch">
+      <button
+        type="button"
+        aria-label="Kurangi jumlah"
+        disabled={decDisabled}
+        onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
+        className="flex size-11 items-center justify-center rounded-l-2xl border border-r-0 border-(--color-border) bg-white text-(--color-text-body) transition enabled:hover:bg-(--color-bg-subtle) disabled:cursor-not-allowed disabled:text-(--color-text-disabled)"
+      >
+        <MinusIcon className="size-6" />
+      </button>
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={quantity}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/[^0-9]/g, "");
+          if (digits === "") return;
+          const n = parseInt(digits, 10);
+          if (!Number.isFinite(n) || n < 1) return;
+          onQuantityChange(maxQuantity ? Math.min(maxQuantity, n) : n);
+        }}
+        className="h-11 w-full appearance-none border border-(--color-border) bg-white text-center text-base leading-5 text-(--color-text-body) outline-none focus:border-(--color-brand)"
+        aria-label="Jumlah"
+      />
+      <button
+        type="button"
+        aria-label="Tambah jumlah"
+        disabled={incDisabled}
+        onClick={() =>
+          onQuantityChange(maxQuantity ? Math.min(maxQuantity, quantity + 1) : quantity + 1)
+        }
+        className="flex size-11 items-center justify-center rounded-r-2xl border border-l-0 border-(--color-border) bg-white text-(--color-text-body) transition enabled:hover:bg-(--color-bg-subtle) disabled:cursor-not-allowed disabled:text-(--color-text-disabled)"
+      >
+        <PlusIcon className="size-6" />
+      </button>
+    </div>
+  );
+
+  const requiredInfo = requiredInfoLoading ? (
+    <div className="h-11 w-full max-w-[410px] animate-pulse rounded-2xl bg-(--color-bg-subtle)" />
+  ) : (
+    requiredInfoFields.length > 0 && (
+      <div className="flex flex-col gap-4">
+        {requiredInfoFields.map((field) => (
+          <RequiredInfoInput
+            key={field.id}
+            field={field}
+            value={requiredInfoValues[field.field_name] ?? ""}
+            onChange={(v) => onRequiredInfoChange(field.field_name, v)}
+            error={requiredInfoErrors?.[field.field_name]}
+          />
+        ))}
+      </div>
+    )
+  );
+
   return (
-    <section className="flex w-full flex-col gap-3">
+    <section
+      className={`flex w-full flex-col gap-3 ${bare ? "bg-white px-4 py-5" : ""}`}
+    >
       <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
         Pesanan Kamu
       </h2>
-      <div className="flex w-full flex-col gap-4 rounded-2xl border border-(--color-border-low) bg-white p-6">
-        <div className="flex items-center gap-6">
-          <div className="flex min-w-0 flex-1 items-start gap-3">
-            <div className="size-12 shrink-0 overflow-hidden rounded-lg border border-(--color-border) bg-(--color-bg-subtle)">
-              {productImageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={productImageUrl}
-                  alt=""
-                  className="size-full object-cover"
-                  loading="lazy"
-                />
-              ) : null}
+      <div
+        className={
+          bare
+            ? "flex w-full flex-col gap-4"
+            : "flex w-full flex-col gap-4 rounded-2xl border border-(--color-border-low) bg-white p-6"
+        }
+      >
+        {bare ? (
+          // Mobile design order: product → buyer field(s) → price + stepper row.
+          <>
+            {productInfo}
+            {requiredInfo}
+            <div className="flex items-center justify-between gap-4">
+              {price}
+              {stepper}
             </div>
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <p className="font-[family-name:var(--font-heading)] truncate text-base font-bold leading-6 text-(--color-text-title)">
-                {productName}
-              </p>
-              {productSubtitle && (
-                <p className="font-[family-name:var(--font-heading)] truncate text-sm leading-5 text-(--color-text-subdued)">
-                  {productSubtitle}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <p className="font-[family-name:var(--font-heading)] whitespace-nowrap text-right text-base font-bold leading-6 text-(--color-text-title)">
-              {formatPriceIDR(unitPrice)}
-            </p>
-            <div className="flex h-11 w-[160px] items-stretch">
-              <button
-                type="button"
-                aria-label="Kurangi jumlah"
-                disabled={decDisabled}
-                onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
-                className="flex size-11 items-center justify-center rounded-l-2xl border border-r-0 border-(--color-border) bg-white text-(--color-text-body) transition enabled:hover:bg-(--color-bg-subtle) disabled:cursor-not-allowed disabled:text-(--color-text-disabled)"
-              >
-                <MinusIcon className="size-6" />
-              </button>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={quantity}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/[^0-9]/g, "");
-                  if (digits === "") return;
-                  const n = parseInt(digits, 10);
-                  if (!Number.isFinite(n) || n < 1) return;
-                  onQuantityChange(maxQuantity ? Math.min(maxQuantity, n) : n);
-                }}
-                className="h-11 w-full appearance-none border-y border-(--color-border) bg-white text-center text-base leading-6 text-(--color-text-body) outline-none focus:border-(--color-brand)"
-                aria-label="Jumlah"
-              />
-              <button
-                type="button"
-                aria-label="Tambah jumlah"
-                disabled={incDisabled}
-                onClick={() =>
-                  onQuantityChange(maxQuantity ? Math.min(maxQuantity, quantity + 1) : quantity + 1)
-                }
-                className="flex size-11 items-center justify-center rounded-r-2xl border border-l-0 border-(--color-border) bg-white text-(--color-text-body) transition enabled:hover:bg-(--color-bg-subtle) disabled:cursor-not-allowed disabled:text-(--color-text-disabled)"
-              >
-                <PlusIcon className="size-6" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {requiredInfoLoading ? (
-          <div className="h-11 w-full max-w-[410px] animate-pulse rounded-2xl bg-(--color-bg-subtle)" />
+          </>
         ) : (
-          requiredInfoFields.length > 0 && (
-            <div className="flex flex-col gap-4">
-              {requiredInfoFields.map((field) => (
-                <RequiredInfoInput
-                  key={field.id}
-                  field={field}
-                  value={requiredInfoValues[field.field_name] ?? ""}
-                  onChange={(v) => onRequiredInfoChange(field.field_name, v)}
-                  error={requiredInfoErrors?.[field.field_name]}
-                />
-              ))}
+          <>
+            <div className="flex items-center gap-6">
+              {productInfo}
+              <div className="flex items-center gap-4">
+                {price}
+                {stepper}
+              </div>
             </div>
-          )
+            {requiredInfo}
+          </>
         )}
       </div>
     </section>

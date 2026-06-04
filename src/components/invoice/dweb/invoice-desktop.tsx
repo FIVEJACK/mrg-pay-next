@@ -1,94 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-import { Link } from "@/i18n/navigation";
-import { partnerBrowserApi, PartnerApiError } from "@/lib/partner-api/browser-client";
-import type { TransactionDetail } from "@/lib/partner-api";
+import { useInvoice, type InvoiceViewProps } from "@/components/invoice/use-invoice";
 
 import { ChatPanel } from "@/components/invoice/chat-panel";
+import { InvoiceBreadcrumb } from "@/components/invoice/invoice-breadcrumb";
 import { OrderDetailCard } from "@/components/invoice/order-detail-card";
 import { PaymentDetailCard } from "@/components/invoice/payment-detail-card";
 import { SupportCard } from "@/components/invoice/support-card";
-import {
-  TransactionStatusCard,
-  type InvoiceState,
-} from "@/components/invoice/transaction-status-card";
+import { TransactionStatusCard } from "@/components/invoice/transaction-status-card";
 
-export type InvoiceViewProps = {
-  transactionUuid: string;
-};
+export type { InvoiceViewProps };
 
-export function InvoiceDesktop({ transactionUuid }: InvoiceViewProps) {
-  const [transaction, setTransaction] = useState<TransactionDetail | null>(null);
-  const [userIdLabel, setUserIdLabel] = useState("User ID");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Login first (mint JWT), then fetch the transaction detail. The mint
-  // endpoint sets an httpOnly cookie + returns an access_token the browser
-  // client stashes for subsequent Authorization headers.
-  useEffect(() => {
-    let cancelled = false;
-    const controller = new AbortController();
-    setLoading(true);
-
-    (async () => {
-      try {
-        await partnerBrowserApi.mintPartnerToken(transactionUuid, {
-          signal: controller.signal,
-        });
-        const detail = await partnerBrowserApi.getTransactionDetail(transactionUuid, {
-          signal: controller.signal,
-        });
-        if (cancelled) return;
-        setTransaction(detail);
-
-        // Resolve the buyer-identifier label from game.nickname (public
-        // endpoint — no hash needed). Fire-and-forget; the default label is
-        // already set so a failure here is non-fatal.
-        const gameId = detail.orders?.[0]?.game_id;
-        if (gameId) {
-          partnerBrowserApi
-            .getGameInfo(gameId, { signal: controller.signal })
-            .then((info) => {
-              if (cancelled) return;
-              const label = info?.game?.nickname?.trim();
-              if (label) setUserIdLabel(label);
-            })
-            .catch(() => {
-              /* ignore — keep default label */
-            });
-        }
-      } catch (err: unknown) {
-        if ((err as { name?: string })?.name === "AbortError") return;
-        if (cancelled) return;
-        const msg =
-          err instanceof PartnerApiError
-            ? `${err.message} (${err.statusCode})`
-            : "Tidak dapat memuat detail transaksi.";
-        setError(msg);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [transactionUuid]);
+export function InvoiceDesktop(props: InvoiceViewProps) {
+  const { transaction, userIdLabel, loading, error, state, order, buyerId } =
+    useInvoice(props);
 
   if (loading) return <LoadingShell />;
-  if (error || !transaction) return <ErrorShell message={error ?? "Transaksi tidak ditemukan."} />;
-
-  const state = deriveState(transaction);
-  const buyerId = String(transaction.buyer_id ?? `buyer-${transaction.id}`);
-  const order = transaction.orders[0];
+  if (error || !transaction || !state) {
+    return <ErrorShell message={error ?? "Transaksi tidak ditemukan."} />;
+  }
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-6 py-6 lg:px-12">
-      <Breadcrumb transactionNumber={transaction.transaction_number ?? `#${transaction.id}`} />
+      <InvoiceBreadcrumb
+        transactionNumber={transaction.transaction_number ?? `#${transaction.id}`}
+      />
       <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_506px] lg:gap-x-8">
         <div className="flex flex-col gap-6">
           <TransactionStatusCard state={state} transaction={transaction} />
@@ -109,36 +45,6 @@ export function InvoiceDesktop({ transactionUuid }: InvoiceViewProps) {
         </aside>
       </div>
     </div>
-  );
-}
-
-function deriveState(tx: TransactionDetail): InvoiceState {
-  const order = tx.orders[0];
-  if (order?.confirmed_at) return "completed";
-  if (order?.paid_at) return "on_process";
-
-  if (tx.payment_due_date) {
-    const due = new Date(tx.payment_due_date).getTime();
-    if (Number.isFinite(due) && due < Date.now()) return "expired";
-  }
-  return "pending";
-}
-
-function Breadcrumb({ transactionNumber }: { transactionNumber: string }) {
-  return (
-    <nav aria-label="Breadcrumb" className="text-sm">
-      <ol className="flex flex-wrap items-center gap-1 text-(--color-text-subdued)">
-        <li>
-          <Link href="/" className="font-bold text-(--color-brand) hover:underline">
-            Home
-          </Link>
-        </li>
-        <li aria-hidden="true">/</li>
-        <li className="font-bold text-(--color-brand)">Transaksi</li>
-        <li aria-hidden="true">/</li>
-        <li className="truncate">{transactionNumber}</li>
-      </ol>
-    </nav>
   );
 }
 

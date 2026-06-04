@@ -6,8 +6,9 @@ type BuyerInfoCardProps = {
   email: string;
   onEmailChange: (value: string) => void;
   error?: string | null;
-  /** Previously-used emails (from successful checkouts) offered as suggestions. */
-  recentEmails?: string[];
+  recentEmails?: string[];  /** Previously-used emails (from successful checkouts) offered as suggestions. */
+
+  bare?: boolean;
 };
 
 export function BuyerInfoCard({
@@ -15,6 +16,7 @@ export function BuyerInfoCard({
   onEmailChange,
   error,
   recentEmails = [],
+  bare = false,
 }: BuyerInfoCardProps) {
   const [focused, setFocused] = useState(false);
 
@@ -25,11 +27,19 @@ export function BuyerInfoCard({
   const showSuggestions = focused && suggestions.length > 0;
 
   return (
-    <section className="flex w-full flex-col gap-3">
+    <section
+      className={`flex w-full flex-col gap-3 ${bare ? "bg-white px-4 py-5" : ""}`}
+    >
       <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
         Informasi Pembeli
       </h2>
-      <div className="flex flex-col gap-4 rounded-2xl border border-(--color-border-low) bg-white p-6 lg:flex-row lg:items-start lg:gap-4">
+      <div
+        className={
+          bare
+            ? "flex flex-col gap-4"
+            : "flex flex-col gap-4 rounded-2xl border border-(--color-border-low) bg-white p-6 lg:flex-row lg:items-start lg:gap-4"
+        }
+      >
         <label className="flex w-full flex-col gap-1 lg:max-w-[414.5px]">
           <span className="font-[family-name:var(--font-heading)] text-sm leading-5 text-(--color-text-secondary)">
             Email pembeli
