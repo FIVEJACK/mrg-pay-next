@@ -122,6 +122,16 @@ export type Product = {
   use_instant_delivery?: 0 | 1;
   server_id?: number | null;
   server_name?: string | null;
+  wholesale?: ProductWholesaleTier[] | null;
+};
+
+export type ProductWholesaleTier = {
+  product_id?: number;
+  minimum_order: number;
+  price: number;
+  currency?: string;
+  seller_price_currency_precision?: number | null;
+  seller_price_decimal?: string | null;
 };
 
 export type ProductListData = {

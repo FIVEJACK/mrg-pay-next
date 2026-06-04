@@ -6,7 +6,7 @@ import {
   partnerBrowserApi,
   PartnerApiError,
 } from "@/lib/partner-api/browser-client";
-import { calculatePaymentFee, checkPaymentMethodLimit } from "@/lib/partner-api";
+import { calculatePaymentFee, checkPaymentMethodLimit, resolveWholesalePrice } from "@/lib/partner-api";
 import type {
   CreateOrderBody,
   PaymentGroup,
@@ -102,18 +102,16 @@ export function useCheckout({
     return () => controller.abort();
   }, [buyerCountry]);
 
-  const subtotal = product.price * quantity;
+  const { unitPrice, tier: wholesaleTier } = resolveWholesalePrice(product, quantity);
+  const wholesaleEnabled = (product.wholesale?.length ?? 0) > 0;
+  const subtotal = unitPrice * quantity;
 
-  // Derive the effective selection during render: prefer the user's explicit
-  // pick when it fits the current subtotal, otherwise fall back to the first
-  // method whose min/max range covers `subtotal`. This keeps quantity changes
-  // and initial load consistent without a setState-in-effect.
   const availableMethods = useMemo(
     () =>
       paymentGroups
         ? paymentGroups
-            .filter((g) => g.is_active === 1)
-            .flatMap((g) => g.payment_method_list.filter((m) => m.is_active === 1))
+          .filter((g) => g.is_active === 1)
+          .flatMap((g) => g.payment_method_list.filter((m) => m.is_active === 1))
         : [],
     [paymentGroups],
   );
@@ -188,9 +186,9 @@ export function useCheckout({
       payment_method_id: effectivePaymentId,
       product_id: product.id,
       quantity,
-      price: product.price,
+      price: unitPrice,
       email,
-      buyer_price: String(product.price),
+      buyer_price: String(unitPrice),
       buyer_country: buyerCountry,
       buyer_currency: buyerCurrency,
       required_information: JSON.stringify(requiredInfoPayload),
@@ -255,9 +253,13 @@ export function useCheckout({
     effectivePaymentId,
     setSelectedPaymentId,
     // money
+    unitPrice,
     subtotal,
     selectedFee,
     total,
+    // wholesale (grosir)
+    wholesaleEnabled,
+    wholesaleTier,
     // submit
     submitting,
     submitError,

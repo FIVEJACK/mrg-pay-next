@@ -23,6 +23,7 @@ type OrderSummaryCardProps = {
   onRequiredInfoChange: (fieldName: string, value: string) => void;
   requiredInfoErrors?: Record<string, string>;
   bare?: boolean;
+  wholesale?: boolean;
 };
 
 export function OrderSummaryCard({
@@ -39,6 +40,7 @@ export function OrderSummaryCard({
   onRequiredInfoChange,
   requiredInfoErrors,
   bare = false,
+  wholesale = false,
 }: OrderSummaryCardProps) {
   const decDisabled = quantity <= 1;
   const incDisabled = maxQuantity !== undefined && quantity >= maxQuantity;
@@ -65,9 +67,16 @@ export function OrderSummaryCard({
   );
 
   const price = (
-    <p className="font-[family-name:var(--font-heading)] whitespace-nowrap text-right text-base font-bold leading-6 text-(--color-text-title)">
-      {formatPriceIDR(unitPrice)}
-    </p>
+    <div className="flex flex-col items-end gap-1">
+      {wholesale && (
+        <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-bold leading-none text-emerald-600">
+          Grosir
+        </span>
+      )}
+      <p className="font-[family-name:var(--font-heading)] whitespace-nowrap text-right text-base font-bold leading-6 text-(--color-text-title)">
+        {formatPriceIDR(unitPrice)}
+      </p>
+    </div>
   );
 
   const stepper = (
