@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useViewportMobile } from "@/lib/use-viewport-mobile";
 
 import { FilterBar, buildAttributePayload } from "@/components/pdp/filter-bar";
 import { FilterBarMobile } from "@/components/pdp/mweb/filter-bar-mobile";
@@ -61,8 +62,9 @@ export function ProductListClient({
   serverLabel,
   hasServer,
   filters: initialFilters,
-  mobile,
+  mobile: initialMobile,
 }: Props) {
+  const mobile = useViewportMobile(initialMobile ?? false);
   const [activeItemTypeId, setActiveItemTypeId] = useState(initialItemTypeId);
   const [filters, setFilters] = useState<Filters>(initialFilters);
 
