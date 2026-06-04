@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { SearchIcon } from "@/components/icon";
+import { SearchIcon, XIcon } from "@/components/icon";
 import type { FilterOption, FilterOptionId } from "./filter-popover";
 
 export type { FilterOption, FilterOptionId };
@@ -15,6 +15,7 @@ type CheckboxFilterPopoverProps = {
   searchable?: boolean;
   onApply: (ids: FilterOptionId[]) => void;
   onClose: () => void;
+  sheet?: boolean;
 };
 
 export function CheckboxFilterPopover({
@@ -24,6 +25,7 @@ export function CheckboxFilterPopover({
   searchable = true,
   onApply,
   onClose,
+  sheet = false,
 }: CheckboxFilterPopoverProps) {
   const [staged, setStaged] = useState<FilterOptionId[]>(selectedIds);
   const [query, setQuery] = useState("");
@@ -54,12 +56,26 @@ export function CheckboxFilterPopover({
     <div
       role="dialog"
       aria-label={title}
-      className="flex h-full max-h-[520px] w-[380px] flex-col overflow-hidden overscroll-contain rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.15)]"
+      className={
+        sheet
+          ? "flex h-full flex-col overflow-hidden overscroll-contain"
+          : "flex h-full max-h-[520px] w-[380px] flex-col overflow-hidden overscroll-contain rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.15)]"
+      }
     >
       <div className="flex items-center px-4 pb-1.5 pt-3">
         <h3 className="flex-1 font-[family-name:var(--font-heading)] text-base font-bold text-(--color-text-title)">
           {title}
         </h3>
+        {sheet && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tutup"
+            className="flex size-8 items-center justify-center text-(--color-text-subdued) hover:text-(--color-text-body)"
+          >
+            <XIcon className="size-5" />
+          </button>
+        )}
       </div>
 
       {searchable && (
@@ -111,7 +127,7 @@ export function CheckboxFilterPopover({
           onClick={() => setStaged([])}
           className="h-10 flex-1 rounded-full border border-(--color-brand) bg-white text-sm font-bold text-(--color-brand) transition hover:bg-(--color-surface-focus, #e8f2ff)"
         >
-          Reset
+          Reset Filter
         </button>
         <button
           type="button"
@@ -121,7 +137,7 @@ export function CheckboxFilterPopover({
           }}
           className="h-10 flex-1 rounded-full bg-(--color-brand) text-sm font-bold text-white transition hover:opacity-90"
         >
-          Apply
+          Terapkan
         </button>
       </div>
     </div>

@@ -11,9 +11,9 @@ import {
   type AttrFilter,
 } from "@/components/pdp/filter-bar";
 import { FilterPopover, type FilterOption } from "@/components/pdp/filter-popover";
-import { Popover } from "@/components/pdp/popover";
 import { RangeFilterPopover } from "@/components/pdp/range-filter-popover";
 import { SortPopover } from "@/components/pdp/sort-popover";
+import { BottomSheet } from "@/components/pdp/mweb/bottom-sheet";
 import { ChevronDownIcon, SearchIcon, SortIcon, XIcon } from "@/components/icon";
 import type {
   B2b2cAttribute,
@@ -225,7 +225,7 @@ export function FilterBarMobile({
         </div>
 
         {/* Sort icon button */}
-        <Popover
+        <BottomSheet
           renderTrigger={({ ref, onClick, open }) => (
             <button
               ref={ref}
@@ -249,6 +249,7 @@ export function FilterBarMobile({
               value={sort}
               onSelect={(v) => onChange({ sort: v })}
               onClose={close}
+              sheet
             />
           )}
         />
@@ -309,7 +310,7 @@ function GroupChip({
   onApply: (id?: number | string) => void;
 }) {
   return (
-    <Popover
+    <BottomSheet
       renderTrigger={({ ref, onClick, open }) => (
         <button
           ref={ref}
@@ -331,6 +332,7 @@ function GroupChip({
           searchable={options.length > 8}
           onApply={onApply}
           onClose={close}
+          sheet
         />
       )}
     />
@@ -355,7 +357,7 @@ function AttrChip({
     const parts = selected ? selected.split("|") : ["", ""];
     const rangeValue = { min: parts[0] ?? "", max: parts[1] ?? "" };
     return (
-      <Popover
+      <BottomSheet
         renderTrigger={({ ref, onClick, open }) => (
           <button
             ref={ref}
@@ -371,7 +373,7 @@ function AttrChip({
         )}
         renderContent={({ close }) => (
           <RangeFilterPopover
-            title="Filter"
+            title={label}
             sectionLabel={label}
             value={rangeValue}
             constraintMin={attr.min}
@@ -384,6 +386,7 @@ function AttrChip({
               onChange({ attributes: next });
             }}
             onClose={close}
+            sheet
           />
         )}
       />
@@ -393,7 +396,7 @@ function AttrChip({
   if (attr.fieldType === FIELD_TYPE.CHECKBOX) {
     const selectedArr = selected ? selected.split(",") : [];
     return (
-      <Popover
+      <BottomSheet
         renderTrigger={({ ref, onClick, open }) => (
           <button
             ref={ref}
@@ -420,6 +423,7 @@ function AttrChip({
               onChange({ attributes: next });
             }}
             onClose={close}
+            sheet
           />
         )}
       />
@@ -428,7 +432,7 @@ function AttrChip({
 
   // RADIO (single-select)
   return (
-    <Popover
+    <BottomSheet
       renderTrigger={({ ref, onClick, open }) => (
         <button
           ref={ref}
@@ -455,6 +459,7 @@ function AttrChip({
             onChange({ attributes: next });
           }}
           onClose={close}
+          sheet
         />
       )}
     />

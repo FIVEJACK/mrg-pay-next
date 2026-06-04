@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { SearchIcon } from "@/components/icon";
+import { SearchIcon, XIcon } from "@/components/icon";
 
 export type FilterOptionId = number | string;
 
@@ -27,6 +27,8 @@ type FilterPopoverProps = {
   onApply: (id?: FilterOptionId) => void;
   /** Close popover (called for cancel + after apply). */
   onClose: () => void;
+  /** Render as a full-width bottom-sheet content (no fixed width/shadow/radius). */
+  sheet?: boolean;
 };
 
 export function FilterPopover({
@@ -39,6 +41,7 @@ export function FilterPopover({
   searchable = true,
   onApply,
   onClose,
+  sheet = false,
 }: FilterPopoverProps) {
   // Staged selection — apply only on "Apply".
   const [staged, setStaged] = useState<FilterOptionId | undefined>(selectedId);
@@ -72,12 +75,26 @@ export function FilterPopover({
     <div
       role="dialog"
       aria-label={title}
-      className="flex h-full max-h-[520px] w-[380px] flex-col overflow-hidden overscroll-contain rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.15)]"
+      className={
+        sheet
+          ? "flex h-full flex-col overflow-hidden overscroll-contain"
+          : "flex h-full max-h-[520px] w-[380px] flex-col overflow-hidden overscroll-contain rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.15)]"
+      }
     >
       <div className="flex items-center px-4 pb-1.5 pt-3">
         <h3 className="flex-1 font-[family-name:var(--font-heading)] text-base font-bold text-(--color-text-title)">
           {title}
         </h3>
+        {sheet && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tutup"
+            className="flex size-8 items-center justify-center text-(--color-text-subdued) hover:text-(--color-text-body)"
+          >
+            <XIcon className="size-5" />
+          </button>
+        )}
       </div>
 
       {searchable && (
@@ -158,7 +175,7 @@ export function FilterPopover({
           onClick={() => setStaged(undefined)}
           className="h-10 flex-1 rounded-full border border-(--color-brand) bg-white text-sm font-bold text-(--color-brand) transition hover:bg-(--color-surface-focus, #e8f2ff)"
         >
-          Reset
+          Reset Filter
         </button>
         <button
           type="button"
@@ -168,7 +185,7 @@ export function FilterPopover({
           }}
           className="h-10 flex-1 rounded-full bg-(--color-brand) text-sm font-bold text-white transition hover:opacity-90"
         >
-          Apply
+          Terapkan
         </button>
       </div>
     </div>
