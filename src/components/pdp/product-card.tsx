@@ -7,10 +7,11 @@ import { pickProductCoverImage } from "@/lib/partner-api";
 type ProductCardProps = {
   product: Product;
   selected?: boolean;
+  mobile?: boolean;
   onClick?: () => void;
 };
 
-export function ProductCard({ product, selected, onClick }: ProductCardProps) {
+export function ProductCard({ product, selected, mobile, onClick }: ProductCardProps) {
   const cover = pickProductCoverImage(product);
   // competitor_price = normal/reference price; price = (potentially discounted) selling price.
   const normalPrice = product.competitor_price ?? null;
@@ -58,21 +59,41 @@ export function ProductCard({ product, selected, onClick }: ProductCardProps) {
         <p className="text-sm text-(--color-text-subdued)">{deliveryLabel}</p>
 
         <div className="mt-auto flex flex-col gap-0.5 pt-2">
-          <div className="flex flex-wrap items-center gap-1">
-            <span className="text-base font-bold text-(--color-promotion)">
-              {formatPriceIDR(product.price)}
-            </span>
-            {normalPrice && discount !== null && (
-              <span className="text-xs text-(--color-text-subdued) line-through">
-                {formatPriceIDR(normalPrice)}
+          {mobile ? (
+            <>
+              {normalPrice && discount !== null && (
+                <span className="text-xs text-(--color-text-subdued) line-through">
+                  {formatPriceIDR(normalPrice)}
+                </span>
+              )}
+              <div className="flex flex-wrap items-center gap-1">
+                <span className="text-base font-bold text-(--color-promotion)">
+                  {formatPriceIDR(product.price)}
+                </span>
+                {discount !== null && (
+                  <span className="rounded-sm bg-(--color-promotion) px-1 py-0.5 text-[11px] leading-[14px] text-white">
+                    {discount}%
+                  </span>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-base font-bold text-(--color-promotion)">
+                {formatPriceIDR(product.price)}
               </span>
-            )}
-            {discount !== null && (
-              <span className="rounded-sm bg-(--color-promotion) px-1 py-0.5 text-[11px] leading-[14px] text-white">
-                {discount}%
-              </span>
-            )}
-          </div>
+              {normalPrice && discount !== null && (
+                <span className="text-xs text-(--color-text-subdued) line-through">
+                  {formatPriceIDR(normalPrice)}
+                </span>
+              )}
+              {discount !== null && (
+                <span className="rounded-sm bg-(--color-promotion) px-1 py-0.5 text-[11px] leading-[14px] text-white">
+                  {discount}%
+                </span>
+              )}
+            </div>
+          )}
           <p className="text-xs text-(--color-text-subdued)">{formatSoldCount(soldCount)}</p>
         </div>
       </div>

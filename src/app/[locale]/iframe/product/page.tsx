@@ -24,6 +24,7 @@ type PageProps = {
     page?: string;
     keyword?: string;
     sort?: string;
+    mobile?: string;
   }>;
 };
 
@@ -93,6 +94,7 @@ export default async function ProductIframePage({ searchParams }: PageProps) {
           serverLabel={gameInfo?.server_label ?? null}
           hasServer={gameInfo?.has_server === 1}
           filters={filters}
+          mobile={sp.mobile === "1"}
         />
       </div>
     </div>

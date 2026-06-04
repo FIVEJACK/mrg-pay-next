@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { FilterBar, buildAttributePayload } from "@/components/pdp/filter-bar";
+import { FilterBarMobile } from "@/components/pdp/mweb/filter-bar-mobile";
 import { Pagination } from "@/components/pdp/pagination";
 import { ProductDetailPanel } from "@/components/pdp/product-detail-panel";
 import { ProductGrid } from "@/components/pdp/product-grid";
@@ -44,6 +45,7 @@ type Props = {
   serverLabel: string | null;
   hasServer: boolean;
   filters: Filters;
+  mobile?: boolean;
 };
 
 const PER_PAGE = 20;
@@ -58,6 +60,7 @@ export function ProductListClient({
   serverLabel,
   hasServer,
   filters: initialFilters,
+  mobile,
 }: Props) {
   const [activeItemTypeId, setActiveItemTypeId] = useState(initialItemTypeId);
   const [filters, setFilters] = useState<Filters>(initialFilters);
@@ -234,6 +237,23 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
       {detailLoading ? (
         <FilterBarSkeleton />
+      ) : mobile ? (
+        <FilterBarMobile
+          hashCode={hashCode}
+          groups={groups}
+          groupLabel={activeItemType?.item_info_group_label ?? "Tipe"}
+          itemLabel={activeItemType?.item_info_label ?? "Item"}
+          itemInfoGroupId={filters.itemInfoGroupId}
+          itemInfoId={filters.itemInfoId}
+          servers={hasServer ? servers : []}
+          serverLabel={serverLabel}
+          serverId={filters.serverId}
+          attributes={attributes.filter((a) => a.item_type_id === activeItemTypeId)}
+          attributeValues={filters.attributes}
+          keyword={filters.keyword}
+          sort={filters.sort}
+          onChange={handleChangeFilters}
+        />
       ) : (
         <FilterBar
           hashCode={hashCode}
@@ -275,6 +295,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
                 selectedId={selectedProduct?.id}
                 onSelect={setSelectedProduct}
                 compact={selectedProduct !== null}
+                mobile={mobile}
               />
             </div>
           )}
