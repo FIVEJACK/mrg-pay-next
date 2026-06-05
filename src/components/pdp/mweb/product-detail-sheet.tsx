@@ -134,7 +134,7 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
                 src={allImages[imgIndex] ?? ""}
                 alt={product?.name ?? cachedPayload?.productName ?? ""}
                 fill
-                sizes="100vw"
+                sizes="480px"
                 className="object-cover"
                 unoptimized
               />
@@ -229,7 +229,7 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
               <div className="px-4 py-4 text-sm leading-6 text-(--color-text-body)">
                 {tab === "description" ? (
                   description ? (
-                    <p className="whitespace-pre-wrap">{description}</p>
+                    <p className="overflow-hidden whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{description}</p>
                   ) : (
                     <DescriptionFallback product={product} />
                   )
@@ -245,7 +245,7 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
         <div className="flex items-center gap-4 border-t border-(--color-border-low) px-4 py-3">
           <div className="min-w-0 flex-1">
             <p className="text-lg font-bold text-(--color-promotion)">
-              {formatPriceIDR(product?.price ?? cachedPayload?.productPrice ?? 0)}
+              {formatPriceIDR(product?.seller_price ?? cachedPayload?.productPrice ?? 0)}
             </p>
             {cachedPayload?.itemInfoName && (
               <p className="truncate text-xs text-(--color-text-subdued)">{cachedPayload.itemInfoName}</p>
@@ -292,14 +292,8 @@ function DescriptionFallback({ product }: { product: Product }) {
           <dd>{product.stock.toLocaleString("en-US")}</dd>
         </>
       )}
-      {/* <dt className="text-(--color-text-subdued)">Delivery</dt> */}
-      {/* <dd>
-        {product.use_instant_delivery === 1
-          ? "Instant"
-          : product.use_auto_delivery === 1
-            ? "Direct Gift"
-            : "Face to Face"}
-      </dd> */}
+      <dt className="text-(--color-text-subdued)">Delivery</dt>
+      <dd> Face to Face </dd>
     </dl>
   );
 }

@@ -49,7 +49,7 @@ export function ProductCard({ product, selected, mobile, onClick }: ProductCardP
         <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-(--color-text-title)">
           {product.name}
         </h3>
-        {/* <p className="text-sm text-(--color-text-subdued)">{deliveryLabel}</p> */}
+        <p className="text-sm text-(--color-text-subdued)"> Face to Face </p>
 
         <div className="mt-auto flex flex-col gap-0.5 pt-2">
           {mobile ? (

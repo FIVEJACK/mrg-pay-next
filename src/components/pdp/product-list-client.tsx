@@ -13,7 +13,7 @@ import {
   ProductGridSkeleton,
   ResultsCountSkeleton,
 } from "@/components/pdp/skeletons";
-import { postProductSelection } from "@/components/pdp/product-list-messaging";
+import { CLEAR_SELECTION, postProductSelection } from "@/components/pdp/product-list-messaging";
 import { partnerBrowserApi } from "@/lib/partner-api/browser-client";
 import type {
   B2b2cAttribute,
@@ -79,6 +79,19 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   useEffect(() => {
     postProductSelection(selectedProduct, { hashCode, fallbackItemTypeId: activeItemTypeId });
   }, [selectedProduct, hashCode, activeItemTypeId]);
+
+  // Listen for the parent clearing the selection (e.g. mobile detail sheet
+  // closed) so re-selecting the same product re-opens it.
+  useEffect(() => {
+    function onMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin) return;
+      if ((event.data as { type?: unknown } | null)?.type === CLEAR_SELECTION) {
+        setSelectedProduct(null);
+      }
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
 
   useEffect(() => {
     const ctrl = new AbortController();

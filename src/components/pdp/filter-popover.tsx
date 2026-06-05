@@ -77,7 +77,7 @@ export function FilterPopover({
       aria-label={title}
       className={
         sheet
-          ? "flex h-full flex-col overflow-hidden overscroll-contain"
+          ? "flex h-full min-h-0 flex-col overflow-hidden overscroll-contain"
           : "flex h-full max-h-[520px] w-[380px] flex-col overflow-hidden overscroll-contain rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.15)]"
       }
     >
@@ -169,7 +169,7 @@ export function FilterPopover({
         )}
       </div>
 
-      <div className="flex items-center gap-2 border-t border-(--color-border-low) px-4 py-3">
+      <div className="flex shrink-0 items-center gap-2 border-t border-(--color-border-low) px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <button
           type="button"
           onClick={() => setStaged(undefined)}

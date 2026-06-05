@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { CheckboxFilterPopover } from "@/components/pdp/checkbox-filter-popover";
 import {
@@ -70,6 +70,13 @@ export function FilterBarMobile({
   onChange,
 }: FilterBarMobileProps) {
   const attributeFilters = useMemo(() => buildAttributeFilters(attributes), [attributes]);
+
+  // Search is applied on submit (uncontrolled), but keep the visible input in
+  // sync when the keyword is changed externally (chip removal / Clear All).
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (searchInputRef.current) searchInputRef.current.value = keyword ?? "";
+  }, [keyword]);
 
   const groupOptions: FilterOption[] = useMemo(
     () => groups.map((g) => ({ id: g.id, name: g.name })),
@@ -157,28 +164,62 @@ export function FilterBarMobile({
 
   return (
     <div className="flex flex-col gap-2 py-3">
-      {/* Search row */}
-      <form
-        role="search"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const value = String(new FormData(e.currentTarget).get("keyword") ?? "").trim();
-          onChange({ keyword: value || undefined });
-        }}
-      >
-        <label className="flex h-11 w-full items-center gap-2 rounded-2xl border border-(--color-border) bg-white px-3">
-          <SearchIcon className="size-5 shrink-0 text-(--color-text-subdued)" />
-          <input
-            type="search"
-            name="keyword"
-            defaultValue={keyword}
-            placeholder="Search..."
-            className="w-full bg-transparent text-sm text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none"
-          />
-        </label>
-      </form>
+      {/* Search row + sort icon */}
+      <div className="flex items-center gap-2">
+        <form
+          role="search"
+          className="min-w-0 flex-1"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const value = String(new FormData(e.currentTarget).get("keyword") ?? "").trim();
+            onChange({ keyword: value || undefined });
+          }}
+        >
+          <label className="flex h-11 w-full items-center gap-2 rounded-2xl border border-(--color-border) bg-white px-3">
+            <SearchIcon className="size-5 shrink-0 text-(--color-text-subdued)" />
+            <input
+              ref={searchInputRef}
+              type="search"
+              name="keyword"
+              defaultValue={keyword}
+              placeholder="Search..."
+              className="w-full bg-transparent text-sm text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none"
+            />
+          </label>
+        </form>
 
-      {/* Filter chips row + sort icon */}
+        {/* Sort icon button */}
+        <BottomSheet
+          renderTrigger={({ ref, onClick, open }) => (
+            <button
+              ref={ref}
+              type="button"
+              onClick={onClick}
+              aria-haspopup="dialog"
+              aria-expanded={open}
+              aria-label="Urutkan"
+              className={`flex size-11 shrink-0 items-center justify-center rounded-2xl border transition-colors duration-150 ${
+                open || sort !== "popular"
+                  ? "border-(--color-brand) text-(--color-brand)"
+                  : "border-(--color-border) text-(--color-text-body)"
+              } bg-white`}
+            >
+              <SortIcon className="size-5" />
+            </button>
+          )}
+          renderContent={({ close }) => (
+            <SortPopover
+              options={SORT_OPTIONS}
+              value={sort}
+              onSelect={(v) => onChange({ sort: v })}
+              onClose={close}
+              sheet
+            />
+          )}
+        />
+      </div>
+
+      {/* Filter chips row */}
       <div className="flex items-center gap-2">
         {/* Horizontally scrollable chips */}
         <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -230,36 +271,6 @@ export function FilterBarMobile({
             />
           ))}
         </div>
-
-        {/* Sort icon button */}
-        <BottomSheet
-          renderTrigger={({ ref, onClick, open }) => (
-            <button
-              ref={ref}
-              type="button"
-              onClick={onClick}
-              aria-haspopup="dialog"
-              aria-expanded={open}
-              aria-label="Urutkan"
-              className={`flex size-9 shrink-0 items-center justify-center rounded-2xl border transition-colors duration-150 ${
-                open || sort !== "popular"
-                  ? "border-(--color-brand) text-(--color-brand)"
-                  : "border-(--color-border) text-(--color-text-body)"
-              } bg-white`}
-            >
-              <SortIcon className="size-5" />
-            </button>
-          )}
-          renderContent={({ close }) => (
-            <SortPopover
-              options={SORT_OPTIONS}
-              value={sort}
-              onSelect={(v) => onChange({ sort: v })}
-              onClose={close}
-              sheet
-            />
-          )}
-        />
       </div>
 
       {/* Active filter chips strip */}
@@ -362,8 +373,8 @@ function AttrChip({
   const active = !!selected;
 
   if (attr.fieldType === FIELD_TYPE.FREE_TEXT) {
-    const parts = selected ? selected.split("|") : ["", ""];
-    const rangeValue = { min: parts[0] ?? "", max: parts[1] ?? "" };
+    const [min = "", max = ""] = selected ? selected.split("|") : [];
+    const rangeValue = { min, max };
     return (
       <BottomSheet
         renderTrigger={({ ref, onClick, open }) => (

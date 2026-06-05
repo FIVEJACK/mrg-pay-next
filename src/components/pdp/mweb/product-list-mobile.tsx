@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ProductDetailSheet } from "@/components/pdp/mweb/product-detail-sheet";
 import {
+  CLEAR_SELECTION,
   isProductListMessage,
   PRODUCT_DESELECTED,
   PRODUCT_SELECTED,
@@ -44,19 +45,28 @@ export function ProductListMobile({ hashCode }: ProductListViewProps) {
     router.push(`/checkout?${qs.toString()}`);
   }
 
+  function handleClose() {
+    setSelected(null);
+    // Tell the iframe to clear its selection so re-tapping the same product reopens the sheet.
+    iframeRef.current?.contentWindow?.postMessage(
+      { type: CLEAR_SELECTION },
+      window.location.origin,
+    );
+  }
+
   const iframeSrc = `/iframe/product?hash_code=${encodeURIComponent(hashCode)}`;
 
   return (
-    <div className="relative flex min-h-[100dvh] flex-col">
+    <div className="relative flex h-[100dvh] flex-col overflow-hidden">
       <iframe
         ref={iframeRef}
         src={iframeSrc}
         title="Product list"
-        className="min-h-[100dvh] w-full flex-1 border-0"
+        className="h-full w-full flex-1 border-0"
       />
       <ProductDetailSheet
         payload={selected}
-        onClose={() => setSelected(null)}
+        onClose={handleClose}
         onBuy={handleBuy}
       />
     </div>

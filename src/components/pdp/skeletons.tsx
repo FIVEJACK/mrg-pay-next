@@ -65,12 +65,14 @@ export function ProductGridSkeleton({ count = 12, mobile }: { count?: number; mo
 export function FilterBarMobileSkeleton() {
   return (
     <div className="flex flex-col gap-2 py-3">
-      <Skeleton className="h-11 w-full rounded-2xl" />
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-11 min-w-0 flex-1 rounded-2xl" />
+        <Skeleton className="size-11 shrink-0 rounded-2xl" />
+      </div>
       <div className="flex items-center gap-2">
         <Skeleton className="h-9 w-20 rounded-2xl" />
         <Skeleton className="h-9 w-20 rounded-2xl" />
         <Skeleton className="h-9 w-20 rounded-2xl" />
-        <Skeleton className="ml-auto size-9 rounded-2xl" />
       </div>
     </div>
   );

@@ -179,14 +179,8 @@ function DescriptionFallback({ product }: { product: Product }) {
           <dd>{stock.toLocaleString("en-US")}</dd>
         </>
       )}
-      {/* <dt className="text-(--color-text-subdued)">Delivery</dt> */}
-      {/* <dd>
-        {product.use_instant_delivery === 1
-          ? "Instant"
-          : product.use_auto_delivery === 1
-            ? "Direct Gift"
-            : "Face to Face"}
-      </dd> */}
+      <dt className="text-(--color-text-subdued)">Delivery</dt>
+      <dd> Face to Face </dd>
     </dl>
   );
 }

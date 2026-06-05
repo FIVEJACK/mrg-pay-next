@@ -10,6 +10,8 @@ import type { Product } from "@/lib/partner-api";
 
 export const PRODUCT_SELECTED = "lg:product-selected" as const;
 export const PRODUCT_DESELECTED = "lg:product-deselected" as const;
+/** Parent → iframe command telling the iframe to clear its selected product. */
+export const CLEAR_SELECTION = "lg:clear-selection" as const;
 
 export type ProductSelectedPayload = {
   productId: number;
@@ -31,6 +33,10 @@ export type ProductSelectedMessage = {
 
 export type ProductDeselectedMessage = {
   type: typeof PRODUCT_DESELECTED;
+};
+
+export type ClearSelectionMessage = {
+  type: typeof CLEAR_SELECTION;
 };
 
 export type ProductListMessage = ProductSelectedMessage | ProductDeselectedMessage;
