@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { MrgImage } from "@/components/shared/mrg-image";
 
 type GameHeaderProps = {
   name: string;
@@ -11,13 +11,12 @@ export function GameHeader({ name, logoUrl, ctaLabel = "Lihat cara transaksi" }:
     <div className="flex items-center gap-4">
       <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-[var(--color-surface-secondary)]">
         {logoUrl ? (
-          <Image
+          <MrgImage
             src={logoUrl}
             alt={`${name} logo`}
             fill
             sizes="64px"
             className="object-cover"
-            unoptimized
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-[var(--color-text-subdued)]">

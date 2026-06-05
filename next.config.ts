@@ -33,8 +33,31 @@ const csp = Object.entries(cspDirectives)
   .map(([directive, sources]) => `${directive} ${sources.filter(Boolean).join(" ")}`)
   .join("; ");
 
+const imageHosts = [
+  "itemku-upload.s3.ap-southeast-1.amazonaws.com",
+  "itemku-upload.s3-ap-southeast-1.amazonaws.com",
+  "itemku-upload-alpha.s3.ap-southeast-1.amazonaws.com",
+  "d1x91p7vw3vuq8.cloudfront.net",
+  "files.itemku.com",
+  "s3-ap-southeast-1.amazonaws.com",
+  "itemku-assets.s3.ap-southeast-1.amazonaws.com",
+  "itemku-app.s3-ap-southeast-1.amazonaws.com",
+  "itemku-assets.s3-ap-southeast-1.amazonaws.com",
+  "tr.rbxcdn.com",
+  "**.pndsn.com",
+];
+
 const nextConfig: NextConfig = {
   assetPrefix: staticCDNPath,
+  images: {
+    path: process.env.IMAGE_LOADER || undefined,
+    remotePatterns: imageHosts.map((hostname) => ({
+      protocol: "https" as const,
+      hostname,
+    })),
+    deviceSizes: [240, 320, 360, 375, 390, 414, 428, 600, 800, 1000, 1033],
+    imageSizes: [24, 32, 48, 64, 96, 140, 148],
+  },
   async headers() {
     return [
       {

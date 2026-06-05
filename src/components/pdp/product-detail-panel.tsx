@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { MrgImage } from "@/components/shared/mrg-image";
 import { useState } from "react";
 
 import { computeDiscountPct, formatPriceIDR } from "@/lib/format";
@@ -55,13 +55,12 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
       <div className="flex-1 overflow-y-auto">
         <div className="relative aspect-[210/118] w-full bg-(--color-surface-secondary)">
           {cover ? (
-            <Image
+            <MrgImage
               src={cover}
               alt={product.name}
               fill
               sizes="380px"
               className="object-cover"
-              unoptimized
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-xs text-(--color-text-subdued)">

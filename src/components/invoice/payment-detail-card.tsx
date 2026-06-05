@@ -1,3 +1,5 @@
+import { MrgImage } from "@/components/shared/mrg-image";
+
 import { formatPriceIDR } from "@/lib/format";
 import type { TransactionDetail } from "@/lib/partner-api";
 
@@ -68,8 +70,14 @@ function Row({
       <span className={cls}>{label}</span>
       <span className={`ml-auto flex items-center gap-2 text-right ${valueCls}`}>
         {mediaUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={mediaUrl} alt="" className="h-5 w-auto" loading="lazy" />
+          <MrgImage
+            src={mediaUrl}
+            alt=""
+            width={40}
+            height={20}
+            className="h-5 w-auto object-contain"
+            unoptimized
+          />
         )}
         {value}
       </span>

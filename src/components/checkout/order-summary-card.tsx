@@ -1,5 +1,6 @@
 "use client";
 
+import { MrgImage } from "@/components/shared/mrg-image";
 import { useMemo } from "react";
 
 import { formatPriceIDR } from "@/lib/format";
@@ -49,8 +50,13 @@ export function OrderSummaryCard({
     <div className="flex min-w-0 flex-1 items-start gap-3">
       <div className="size-12 shrink-0 overflow-hidden rounded-lg border border-(--color-border) bg-(--color-bg-subtle)">
         {productImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={productImageUrl} alt="" className="size-full object-cover" loading="lazy" />
+          <MrgImage
+            src={productImageUrl}
+            alt=""
+            width={48}
+            height={48}
+            className="size-full object-cover"
+          />
         ) : null}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1">

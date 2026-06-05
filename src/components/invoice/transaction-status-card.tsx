@@ -1,5 +1,6 @@
 "use client";
 
+import { MrgImage } from "@/components/shared/mrg-image";
 import { useEffect, useState } from "react";
 
 import { ClockIcon } from "@/components/icon";
@@ -94,12 +95,13 @@ function PendingCard({
         <div className="flex items-center justify-between gap-4 rounded-2xl border border-(--color-brand) bg-(--color-surface-focus) px-6 py-4">
           <div className="flex items-center gap-3">
             {transaction.payment_method_media_url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <MrgImage
                 src={transaction.payment_method_media_url}
                 alt=""
-                className="h-6 w-auto"
-                loading="lazy"
+                width={48}
+                height={24}
+                className="h-6 w-auto object-contain"
+                unoptimized
               />
             )}
             <div>
