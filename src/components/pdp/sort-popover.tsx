@@ -1,5 +1,7 @@
 "use client";
 
+import { XIcon } from "@/components/icon";
+
 export type SortOption<T extends string = string> = {
   value: T;
   label: string;
@@ -11,6 +13,7 @@ type SortPopoverProps<T extends string> = {
   value: T;
   onSelect: (value: T) => void;
   onClose: () => void;
+  sheet?: boolean;
 };
 
 export function SortPopover<T extends string>({
@@ -19,17 +22,32 @@ export function SortPopover<T extends string>({
   value,
   onSelect,
   onClose,
+  sheet = false,
 }: SortPopoverProps<T>) {
   return (
     <div
       role="dialog"
       aria-label={title}
-      className="w-[280px] overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.15)]"
+      className={
+        sheet
+          ? "overflow-hidden"
+          : "w-[280px] overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.15)]"
+      }
     >
-      <div className="px-4 pb-1 pt-3">
-        <h3 className="font-[family-name:var(--font-heading)] text-base font-bold text-(--color-text-title)">
+      <div className="flex items-center px-4 pb-1 pt-3">
+        <h3 className="flex-1 font-[family-name:var(--font-heading)] text-base font-bold text-(--color-text-title)">
           {title}
         </h3>
+        {sheet && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tutup"
+            className="flex size-8 items-center justify-center text-(--color-text-subdued) hover:text-(--color-text-body)"
+          >
+            <XIcon className="size-5" />
+          </button>
+        )}
       </div>
 
       <ul role="listbox" aria-label={title} className="py-1">

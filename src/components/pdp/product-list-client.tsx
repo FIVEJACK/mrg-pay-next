@@ -3,15 +3,17 @@
 import { useEffect, useState } from "react";
 
 import { FilterBar, buildAttributePayload } from "@/components/pdp/filter-bar";
+import { FilterBarMobile } from "@/components/pdp/mweb/filter-bar-mobile";
 import { Pagination } from "@/components/pdp/pagination";
 import { ProductDetailPanel } from "@/components/pdp/product-detail-panel";
 import { ProductGrid } from "@/components/pdp/product-grid";
 import {
+  FilterBarMobileSkeleton,
   FilterBarSkeleton,
   ProductGridSkeleton,
   ResultsCountSkeleton,
 } from "@/components/pdp/skeletons";
-import { postProductSelection } from "@/components/pdp/product-list-messaging";
+import { CLEAR_SELECTION, postProductSelection } from "@/components/pdp/product-list-messaging";
 import { partnerBrowserApi } from "@/lib/partner-api/browser-client";
 import type {
   B2b2cAttribute,
@@ -44,6 +46,7 @@ type Props = {
   serverLabel: string | null;
   hasServer: boolean;
   filters: Filters;
+  mobile?: boolean;
 };
 
 const PER_PAGE = 20;
@@ -58,6 +61,7 @@ export function ProductListClient({
   serverLabel,
   hasServer,
   filters: initialFilters,
+  mobile,
 }: Props) {
   const [activeItemTypeId, setActiveItemTypeId] = useState(initialItemTypeId);
   const [filters, setFilters] = useState<Filters>(initialFilters);
@@ -75,6 +79,19 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   useEffect(() => {
     postProductSelection(selectedProduct, { hashCode, fallbackItemTypeId: activeItemTypeId });
   }, [selectedProduct, hashCode, activeItemTypeId]);
+
+  // Listen for the parent clearing the selection (e.g. mobile detail sheet
+  // closed) so re-selecting the same product re-opens it.
+  useEffect(() => {
+    function onMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin) return;
+      if ((event.data as { type?: unknown } | null)?.type === CLEAR_SELECTION) {
+        setSelectedProduct(null);
+      }
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -233,7 +250,24 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
       </div>
 
       {detailLoading ? (
-        <FilterBarSkeleton />
+        mobile ? <FilterBarMobileSkeleton /> : <FilterBarSkeleton />
+      ) : mobile ? (
+        <FilterBarMobile
+          hashCode={hashCode}
+          groups={groups}
+          groupLabel={activeItemType?.item_info_group_label ?? "Tipe"}
+          itemLabel={activeItemType?.item_info_label ?? "Item"}
+          itemInfoGroupId={filters.itemInfoGroupId}
+          itemInfoId={filters.itemInfoId}
+          servers={hasServer ? servers : []}
+          serverLabel={serverLabel}
+          serverId={filters.serverId}
+          attributes={attributes.filter((a) => a.item_type_id === activeItemTypeId)}
+          attributeValues={filters.attributes}
+          keyword={filters.keyword}
+          sort={filters.sort}
+          onChange={handleChangeFilters}
+        />
       ) : (
         <FilterBar
           hashCode={hashCode}
@@ -267,7 +301,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
       <div className="flex gap-6 pt-3">
         <div className="min-w-0 flex-1">
           {productsLoading ? (
-            <ProductGridSkeleton count={PER_PAGE} />
+            <ProductGridSkeleton count={PER_PAGE} mobile={mobile} />
           ) : (
             <div className="animate-fade-in">
               <ProductGrid
@@ -275,6 +309,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
                 selectedId={selectedProduct?.id}
                 onSelect={setSelectedProduct}
                 compact={selectedProduct !== null}
+                mobile={mobile}
               />
             </div>
           )}
@@ -291,7 +326,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
           </div>
         </div>
 
-        {selectedProduct && (
+        {!mobile && selectedProduct && (
           <ProductDetailPanel
             product={selectedProduct}
             onClose={() => setSelectedProduct(null)}
@@ -299,7 +334,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
         )}
       </div>
 
-      {selectedProduct && (
+      {!mobile && selectedProduct && (
         // Spacer so iframe content can scroll past the parent's fixed purchase bar.
         <div aria-hidden="true" className="h-20" />
       )}

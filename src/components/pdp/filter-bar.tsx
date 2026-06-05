@@ -45,7 +45,7 @@ type FilterBarProps = {
   onChange: (updates: Partial<Filters>) => void;
 };
 
-const FIELD_TYPE = {
+export const FIELD_TYPE = {
   FREE_TEXT: 1,
   CHECKBOX: 2,
   RADIO: 3,
@@ -64,7 +64,7 @@ type AttrConfig = {
   validation_rules?: Array<{ validation_name: string; value: string }>;
 };
 
-type AttrFilter = {
+export type AttrFilter = {
   id: number;
   translationKey: string;
   fieldType: number;
@@ -74,7 +74,7 @@ type AttrFilter = {
   max?: string;
 };
 
-function buildAttributeFilters(attributes: B2b2cAttribute[]): AttrFilter[] {
+export function buildAttributeFilters(attributes: B2b2cAttribute[]): AttrFilter[] {
   const out: AttrFilter[] = [];
   for (const a of attributes) {
     const cfg = a.configuration as AttrConfig;
@@ -141,14 +141,14 @@ export function buildAttributePayload(
 }
 
 /** "nama_hero" → "Nama Hero" */
-function humanizeKey(key: string) {
+export function humanizeKey(key: string) {
   return key
     .split("_")
     .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : ""))
     .join(" ");
 }
 
-const SORT_OPTIONS: Array<{ value: NonNullable<ProductListQuery["sort"]>; label: string }> = [
+export const SORT_OPTIONS: Array<{ value: NonNullable<ProductListQuery["sort"]>; label: string }> = [
   { value: "popular", label: "Produk Terpopuler" },
   { value: "cheap", label: "Harga: Rendah ke Tinggi" },
   { value: "expensive", label: "Harga: Tinggi ke Rendah" },

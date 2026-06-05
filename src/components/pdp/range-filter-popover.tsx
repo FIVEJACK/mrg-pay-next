@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { XIcon } from "@/components/icon";
+
 export type RangeValue = { min: string; max: string };
 
 type RangeFilterPopoverProps = {
@@ -17,6 +19,7 @@ type RangeFilterPopoverProps = {
   constraintMax?: string;
   onApply: (value?: Partial<RangeValue>) => void;
   onClose: () => void;
+  sheet?: boolean;
 };
 
 export function RangeFilterPopover({
@@ -27,6 +30,7 @@ export function RangeFilterPopover({
   constraintMax,
   onApply,
   onClose,
+  sheet = false,
 }: RangeFilterPopoverProps) {
   const [min, setMin] = useState(value?.min ?? "");
   const [max, setMax] = useState(value?.max ?? "");
@@ -73,10 +77,29 @@ export function RangeFilterPopover({
     <div
       role="dialog"
       aria-label={title}
-      className="flex w-[380px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.15)]"
+      className={
+        sheet
+          ? "flex h-full min-h-0 flex-col overflow-hidden"
+          : "flex w-[380px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.15)]"
+      }
     >
+      {sheet && (
+        <div className="flex items-center px-4 pb-1.5 pt-3">
+          <h3 className="flex-1 font-[family-name:var(--font-heading)] text-base font-bold text-(--color-text-title)">
+            {title}
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tutup"
+            className="flex size-8 items-center justify-center text-(--color-text-subdued) hover:text-(--color-text-body)"
+          >
+            <XIcon className="size-5" />
+          </button>
+        </div>
+      )}
       {/* Body */}
-      <div className="px-4 py-3">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         <p className="mb-3 text-sm font-bold text-(--color-text-title)">{sectionLabel}</p>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
@@ -107,20 +130,20 @@ export function RangeFilterPopover({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center gap-2 border-t border-(--color-border-low) px-4 py-3">
+      <div className="flex shrink-0 items-center gap-2 border-t border-(--color-border-low) px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <button
           type="button"
           onClick={handleReset}
           className="h-10 flex-1 rounded-full border border-(--color-brand) bg-white text-sm font-bold text-(--color-brand) transition hover:bg-(--color-surface-focus, #e8f2ff)"
         >
-          Reset
+          Reset Filter
         </button>
         <button
           type="button"
           onClick={handleApply}
           className="h-10 flex-1 rounded-full bg-(--color-brand) text-sm font-bold text-white transition hover:opacity-90"
         >
-          Apply
+          Terapkan
         </button>
       </div>
     </div>

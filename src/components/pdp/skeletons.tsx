@@ -49,12 +49,31 @@ export function ProductCardSkeleton() {
   );
 }
 
-export function ProductGridSkeleton({ count = 12 }: { count?: number }) {
+export function ProductGridSkeleton({ count = 12, mobile }: { count?: number; mobile?: boolean }) {
+  const colsClass = mobile
+    ? "grid grid-cols-2 gap-3"
+    : "grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
   return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className={colsClass}>
       {Array.from({ length: count }).map((_, i) => (
         <ProductCardSkeleton key={i} />
       ))}
+    </div>
+  );
+}
+
+export function FilterBarMobileSkeleton() {
+  return (
+    <div className="flex flex-col gap-2 py-3">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-11 min-w-0 flex-1 rounded-2xl" />
+        <Skeleton className="size-11 shrink-0 rounded-2xl" />
+      </div>
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-9 w-20 rounded-2xl" />
+        <Skeleton className="h-9 w-20 rounded-2xl" />
+        <Skeleton className="h-9 w-20 rounded-2xl" />
+      </div>
     </div>
   );
 }

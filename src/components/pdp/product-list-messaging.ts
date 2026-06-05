@@ -10,6 +10,8 @@ import type { Product } from "@/lib/partner-api";
 
 export const PRODUCT_SELECTED = "lg:product-selected" as const;
 export const PRODUCT_DESELECTED = "lg:product-deselected" as const;
+/** Parent → iframe command telling the iframe to clear its selected product. */
+export const CLEAR_SELECTION = "lg:clear-selection" as const;
 
 export type ProductSelectedPayload = {
   productId: number;
@@ -20,6 +22,8 @@ export type ProductSelectedPayload = {
   itemTypeId: number | null;
   gameId: number | null;
   hashCode: string;
+  /** Full product object — used by the mobile ProductDetailSheet to render without a re-fetch. */
+  product: Product;
 };
 
 export type ProductSelectedMessage = {
@@ -29,6 +33,10 @@ export type ProductSelectedMessage = {
 
 export type ProductDeselectedMessage = {
   type: typeof PRODUCT_DESELECTED;
+};
+
+export type ClearSelectionMessage = {
+  type: typeof CLEAR_SELECTION;
 };
 
 export type ProductListMessage = ProductSelectedMessage | ProductDeselectedMessage;
@@ -75,12 +83,13 @@ export function postProductSelection(
     payload: {
       productId: product.id,
       productName: product.name,
-      productPrice: product.price,
+      productPrice: product.seller_price ?? product.price,
       itemInfoName: itemInfo?.name ?? itemInfo?.slug ?? null,
       serverName: product.server_name ?? null,
       itemTypeId: product.item_type_id ?? fallbackItemTypeId,
       gameId: product.game_id ?? null,
       hashCode,
+      product,
     },
   };
   window.parent.postMessage(msg, window.location.origin);
