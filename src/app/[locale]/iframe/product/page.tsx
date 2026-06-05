@@ -2,6 +2,7 @@ import { Breadcrumb } from "@/components/pdp/breadcrumb";
 import { GameHeader } from "@/components/pdp/game-header";
 import { HeroBackground } from "@/components/pdp/hero-background";
 import { ProductListClient } from "@/components/pdp/product-list-client";
+import { isMobile } from "@/lib/device.server";
 import { tryDecodeB2b2cHash } from "@/lib/partner-api/b2b2c-hash";
 import {
   partnerApi,
@@ -39,10 +40,11 @@ export default async function ProductIframePage({ searchParams }: PageProps) {
 
   // Fetch in parallel — game-info populates the breadcrumb/header/tabs, and
   // the attribute config drives the b2b2c filter UI.
-  const [gameInfo, attributes]: [GameInfoData | null, B2b2cAttribute[] | null] =
+  const [gameInfo, attributes, mobile]: [GameInfoData | null, B2b2cAttribute[] | null, boolean] =
     await Promise.all([
       safeCall(() => partnerApi.getGameInfo(gameId, { hashCode })),
       safeCall(() => partnerApi.getProductAttributeConfiguration(hashCode)),
+      isMobile(),
     ]);
 
   const itemTypes = gameInfo?.item_type ?? [];
@@ -93,6 +95,7 @@ export default async function ProductIframePage({ searchParams }: PageProps) {
           serverLabel={gameInfo?.server_label ?? null}
           hasServer={gameInfo?.has_server === 1}
           filters={filters}
+          mobile={mobile}
         />
       </div>
     </div>
