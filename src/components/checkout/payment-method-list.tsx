@@ -247,7 +247,6 @@ function PaymentLogoChip({ method }: { method: PaymentMethod }) {
         width={56}
         height={32}
         className="h-8 w-14 shrink-0 object-contain"
-        unoptimized
       />
     );
   }

@@ -76,7 +76,6 @@ function Row({
             width={40}
             height={20}
             className="h-5 w-auto object-contain"
-            unoptimized
           />
         )}
         {value}

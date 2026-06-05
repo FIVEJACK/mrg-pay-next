@@ -101,7 +101,6 @@ function PendingCard({
                 width={48}
                 height={24}
                 className="h-6 w-auto object-contain"
-                unoptimized
               />
             )}
             <div>

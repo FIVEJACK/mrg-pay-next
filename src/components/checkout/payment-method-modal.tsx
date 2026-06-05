@@ -284,7 +284,6 @@ function ModalPaymentCard({
           width={56}
           height={32}
           className="h-8 w-14 shrink-0 object-contain"
-          unoptimized
         />
       ) : (
         <span className="flex h-8 w-14 shrink-0 items-center justify-center rounded-sm bg-(--color-bg-subtle) text-[11px] font-bold leading-none text-(--color-text-secondary)">
