@@ -14,7 +14,7 @@ import {
   ResultsCountSkeleton,
 } from "@/components/pdp/skeletons";
 import { CLEAR_SELECTION, postProductSelection } from "@/components/pdp/product-list-messaging";
-import { EVENT, trackEvent } from "@/lib/amplitude";
+import { CLIENT_NAME, EVENT, trackEvent } from "@/lib/amplitude";
 import { getItemCategoryName } from "@/lib/item-category";
 import { partnerBrowserApi } from "@/lib/partner-api/browser-client";
 import type {
@@ -238,7 +238,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   function handleSelectProduct(product: Product) {
     setSelectedProduct(product);
     trackEvent(EVENT.VISIT_PRODUCT_DETAIL, {
-      "Client Name": 'LapakGaming',
+      "Client Name": CLIENT_NAME,
       Game: gameName,
       "Item Type": product.item_type?.name ?? activeItemType?.name ?? null,
       "Item Category": getItemCategoryName(product.item_category_id),

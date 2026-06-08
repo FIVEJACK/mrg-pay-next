@@ -3,7 +3,7 @@ import { GameHeader } from "@/components/pdp/game-header";
 import { HeroBackground } from "@/components/pdp/hero-background";
 import { ProductListClient } from "@/components/pdp/product-list-client";
 import { VisitPageTracker } from "@/components/shared/visit-page-tracker";
-import { EVENT } from "@/lib/amplitude";
+import { CLIENT_NAME, EVENT } from "@/lib/amplitude";
 import { isMobile } from "@/lib/device.server";
 import { tryDecodeB2b2cHash } from "@/lib/partner-api/b2b2c-hash";
 import {
@@ -83,7 +83,7 @@ export default async function ProductIframePage({ searchParams }: PageProps) {
       <VisitPageTracker
         eventName={EVENT.VISIT_PRODUCT_CATALOGUE}
         properties={{
-          "Client Name": 'LapakGaming', // hardcoded for now
+          "Client Name": CLIENT_NAME,
           Game: gameName,
           "Item Type": itemTypeName,
           "Device Env": mobile ? "Mobile" : "Desktop",

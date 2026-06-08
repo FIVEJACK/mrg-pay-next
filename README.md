@@ -150,8 +150,8 @@ Set the key via env (exposed to the browser, so it must be `NEXT_PUBLIC_`):
 NEXT_PUBLIC_AMPLITUDE_API_KEY=your-amplitude-api-key
 ```
 
-`autocapture` is enabled, so page views and sessions are tracked automatically.
-On top of that we send explicit business events.
+`autocapture` is fully disabled (pageViews, webVitals, elementInteractions, pageUrlEnrichment).
+All tracking is explicit — nothing is sent unless you call `trackEvent` or use `VisitPageTracker`.
 
 #### Track a custom event
 
@@ -183,6 +183,29 @@ import { VisitPageTracker } from "@/components/shared/visit-page-tracker";
 import { EVENT } from "@/lib/amplitude";
 
 <VisitPageTracker eventName={EVENT.VISIT_CHECKOUT_PAGE} properties={{ product_id }} />
+```
+
+#### Flush before navigation
+
+If you redirect immediately after tracking (e.g. post-checkout), await `flushAmplitude()`
+so queued events aren't dropped when the page unloads:
+
+```typescript
+import { flushAmplitude } from "@/lib/amplitude";
+
+await flushAmplitude();
+router.push("/success");
+```
+
+#### Identify a user
+
+After resolving a user identity (e.g. login), call `identifyUser` to associate
+subsequent events with that user:
+
+```typescript
+import { identifyUser } from "@/lib/amplitude";
+
+identifyUser(user.email);
 ```
 
 ### Add Custom Page Header

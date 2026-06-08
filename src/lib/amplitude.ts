@@ -26,6 +26,9 @@ export const EVENT = {
   CREATE_TRANSACTION: "Create Transaction",
 } as const;
 
+/** Amplitude "Client Name" property value — shared across all events. */
+export const CLIENT_NAME = "LapakGaming" as const;
+
 export type EventName = (typeof EVENT)[keyof typeof EVENT];
 export type EventProperties = Record<string, unknown>;
 

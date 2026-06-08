@@ -2,7 +2,7 @@ import { CheckoutView } from "@/components/checkout/checkout-view";
 import { CheckoutFooter } from "@/components/checkout/checkout-footer";
 import { CheckoutHeader } from "@/components/checkout/checkout-header";
 import { VisitPageTracker } from "@/components/shared/visit-page-tracker";
-import { EVENT } from "@/lib/amplitude";
+import { CLIENT_NAME, EVENT } from "@/lib/amplitude";
 import { isMobile } from "@/lib/device.server";
 import { getItemCategoryName } from "@/lib/item-category";
 import { tryDecodeB2b2cHash } from "@/lib/partner-api/b2b2c-hash";
@@ -72,7 +72,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
       <VisitPageTracker
         eventName={EVENT.VISIT_CHECKOUT_PAGE}
         properties={{
-          "Client Name": "LapakGaming",
+          "Client Name": CLIENT_NAME,
           Game: product.game?.name ?? null,
           "Item Type": product.item_type?.name ?? null,
           "Item Category": getItemCategoryName(categoryId),

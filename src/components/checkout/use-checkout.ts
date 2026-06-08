@@ -14,7 +14,7 @@ import type {
   RequiredInfoField,
 } from "@/lib/partner-api";
 import { addRecentEmail, getRecentEmails } from "@/lib/recent-emails";
-import { EVENT, flushAmplitude, trackEvent } from "@/lib/amplitude";
+import { CLIENT_NAME, EVENT, flushAmplitude, trackEvent } from "@/lib/amplitude";
 import { getItemCategoryName } from "@/lib/item-category";
 import { useIsMobile } from "@/components/shared/device-context";
 
@@ -221,7 +221,7 @@ export function useCheckout({
       // Order created successfully — remember this email for next time.
       addRecentEmail(email);
       trackEvent(EVENT.CREATE_TRANSACTION, {
-        "Client Name": "LapakGaming",
+        "Client Name": CLIENT_NAME,
         Game: product.game?.name ?? null,
         "Item Type": product.item_type?.name ?? null,
         "Item Category": getItemCategoryName(itemCategoryId ?? product.item_category_id),
