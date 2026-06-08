@@ -5,6 +5,9 @@ export interface IConfig {
     publishKey: string;
     subscribeKey: string;
   };
+  amplitude: {
+    apiKey: string;
+  };
 }
 
 const config: IConfig = {
@@ -14,6 +17,9 @@ const config: IConfig = {
   pubnub: {
     publishKey: process.env.NEXT_PUBLIC_PUBNUB_PUB_KEY || "",
     subscribeKey: process.env.NEXT_PUBLIC_PUBNUB_SUB_KEY || "",
+  },
+  amplitude: {
+    apiKey: process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY || "",
   },
 };
 

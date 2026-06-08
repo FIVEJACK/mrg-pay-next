@@ -1,6 +1,11 @@
 import { CheckoutView } from "@/components/checkout/checkout-view";
 import { CheckoutFooter } from "@/components/checkout/checkout-footer";
 import { CheckoutHeader } from "@/components/checkout/checkout-header";
+import { VisitPageTracker } from "@/components/shared/visit-page-tracker";
+import { EVENT } from "@/lib/amplitude";
+import { isMobile } from "@/lib/device.server";
+import { getItemCategoryName } from "@/lib/item-category";
+import { tryDecodeB2b2cHash } from "@/lib/partner-api/b2b2c-hash";
 import {
   partnerApi,
   PartnerApiError,
@@ -16,6 +21,7 @@ type PageProps = {
     product_id?: string;
     hash_code?: string;
     item_type_id?: string;
+    item_category_id?: string;
     game_id?: string;
     qty?: string;
   }>;
@@ -26,6 +32,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
   const hashCode = sp.hash_code?.trim();
   const productId = numOrUndef(sp.product_id);
   const itemTypeId = numOrUndef(sp.item_type_id);
+  const itemCategoryId = numOrUndef(sp.item_category_id);
   const gameId = numOrUndef(sp.game_id);
   const initialQuantity = Math.max(1, Number(sp.qty ?? "1") || 1);
 
@@ -54,13 +61,35 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
     );
   }
 
+  const scope = tryDecodeB2b2cHash(hashCode);
+  const country = scope?.country_code ?? "ID";
+  const currency = scope?.currency ?? "IDR";
+  const mobile = await isMobile();
+  const categoryId = itemCategoryId ?? product.item_category_id;
+
   return (
     <CheckoutShell>
+      <VisitPageTracker
+        eventName={EVENT.VISIT_CHECKOUT_PAGE}
+        properties={{
+          "Client Name": "LapakGaming",
+          Game: product.game?.name ?? null,
+          "Item Type": product.item_type?.name ?? null,
+          "Item Category": getItemCategoryName(categoryId),
+          "Device Env": mobile ? "Mobile" : "Desktop",
+          "Product ID": product.id,
+          "Product Name": product.name,
+          Country: country,
+        }}
+      />
       <CheckoutView
         product={product}
         productImageUrl={pickProductCoverImage(product)}
         initialQuantity={initialQuantity}
         hashCode={hashCode}
+        buyerCountry={country}
+        buyerCurrency={currency}
+        itemCategoryId={categoryId}
       />
     </CheckoutShell>
   );

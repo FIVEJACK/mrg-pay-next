@@ -22,6 +22,7 @@ const cspDirectives: Record<string, Array<string | false>> = {
     "https://*.pndsn.com",
     "wss://*.pubnub.com",
     "wss://*.pndsn.com",
+    "https://*.amplitude.com",
     isDev && "ws:",
   ],
   "frame-src": ["'self'"],

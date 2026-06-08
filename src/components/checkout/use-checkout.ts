@@ -14,6 +14,9 @@ import type {
   RequiredInfoField,
 } from "@/lib/partner-api";
 import { addRecentEmail, getRecentEmails } from "@/lib/recent-emails";
+import { EVENT, flushAmplitude, trackEvent } from "@/lib/amplitude";
+import { getItemCategoryName } from "@/lib/item-category";
+import { useIsMobile } from "@/components/shared/device-context";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -21,10 +24,10 @@ export type CheckoutViewProps = {
   product: Product;
   productImageUrl: string | null;
   initialQuantity: number;
-  /** B2B2C hash that scopes the order to the current partner/game/item-type. */
   hashCode: string;
   buyerCountry?: string;
   buyerCurrency?: string;
+  itemCategoryId?: number;
 };
 
 /**
@@ -39,12 +42,20 @@ export function useCheckout({
   hashCode,
   buyerCountry = "ID",
   buyerCurrency = "IDR",
+  itemCategoryId,
 }: CheckoutViewProps) {
+  const isMobile = useIsMobile();
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
   const [recentEmails, setRecentEmails] = useState<string[]>([]);
   useEffect(() => {
-    setRecentEmails(getRecentEmails());
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (!cancelled) setRecentEmails(getRecentEmails());
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const [requiredInfoFields, setRequiredInfoFields] = useState<RequiredInfoField[]>([]);
@@ -66,39 +77,49 @@ export function useCheckout({
   // extra fields are required (e.g. account-selling products).
   useEffect(() => {
     const itemTypeId = product.item_type_id;
-    if (!itemTypeId) {
-      setRequiredInfoFields([]);
-      setRequiredInfoLoading(false);
-      return;
-    }
     const controller = new AbortController();
-    setRequiredInfoLoading(true);
-    partnerBrowserApi
-      .getRequiredInfo(itemTypeId, { signal: controller.signal })
-      .then((fields) => setRequiredInfoFields(fields))
-      .catch((err: unknown) => {
+    async function loadRequiredInfo() {
+      if (!itemTypeId) {
+        setRequiredInfoFields([]);
+        setRequiredInfoLoading(false);
+        return;
+      }
+      setRequiredInfoLoading(true);
+      try {
+        const fields = await partnerBrowserApi.getRequiredInfo(itemTypeId, {
+          signal: controller.signal,
+        });
+        setRequiredInfoFields(fields);
+      } catch (err: unknown) {
         if ((err as { name?: string })?.name === "AbortError") return;
         setRequiredInfoFields([]);
-      })
-      .finally(() => setRequiredInfoLoading(false));
+      } finally {
+        setRequiredInfoLoading(false);
+      }
+    }
+    loadRequiredInfo();
     return () => controller.abort();
   }, [product.item_type_id]);
 
   useEffect(() => {
     const controller = new AbortController();
-    setPaymentLoading(true);
-    partnerBrowserApi
-      .getPaymentMethods(buyerCountry, { signal: controller.signal })
-      .then((groups) => {
+    async function loadPaymentMethods() {
+      setPaymentLoading(true);
+      try {
+        const groups = await partnerBrowserApi.getPaymentMethods(buyerCountry, {
+          signal: controller.signal,
+        });
         setPaymentGroups(groups);
-      })
-      .catch((err: unknown) => {
+      } catch (err: unknown) {
         if ((err as { name?: string })?.name === "AbortError") return;
         const msg =
           err instanceof PartnerApiError ? err.message : "Tidak dapat menghubungi server.";
         setPaymentError(msg);
-      })
-      .finally(() => setPaymentLoading(false));
+      } finally {
+        setPaymentLoading(false);
+      }
+    }
+    loadPaymentMethods();
     return () => controller.abort();
   }, [buyerCountry]);
 
@@ -199,6 +220,19 @@ export function useCheckout({
       const result = await partnerBrowserApi.createOrder(body, { hashCode });
       // Order created successfully — remember this email for next time.
       addRecentEmail(email);
+      trackEvent(EVENT.CREATE_TRANSACTION, {
+        "Client Name": "LapakGaming",
+        Game: product.game?.name ?? null,
+        "Item Type": product.item_type?.name ?? null,
+        "Item Category": getItemCategoryName(itemCategoryId ?? product.item_category_id),
+        "Device Env": isMobile ? "Mobile" : "Desktop",
+        "Product ID": product.id,
+        "Product Name": product.name,
+        Country: buyerCountry,
+        value: total,
+      });
+      // Make sure the event leaves the browser before we navigate away.
+      await flushAmplitude();
       const redirect =
         result?.direct_payment?.checkoutUrl ||
         result?.direct_payment?.gateway?.url ||
