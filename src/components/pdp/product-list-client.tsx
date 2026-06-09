@@ -197,6 +197,13 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   function handleSelectItemType(id: number) {
     if (id === activeItemTypeId) return;
+    const itemType = itemTypes.find((t) => t.id === id);
+    trackEvent(EVENT.VISIT_PRODUCT_CATALOGUE, {
+      "Client Name": CLIENT_NAME,
+      Game: gameName,
+      "Item Type": itemType?.name ?? null,
+      Country: country,
+    });
     // Reset item_info_group_id / item_info_id since they don't apply across types.
     // Attribute filters are also b2b2c-scoped — drop them when leaving the hash type.
     // server_id is game-scoped so it stays.
@@ -237,7 +244,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   function handleSelectProduct(product: Product) {
     setSelectedProduct(product);
-    trackEvent(EVENT.VISIT_PRODUCT_DETAIL, {
+    trackEvent(EVENT.VISIT_PRODUCT_DESCRIPTION, {
       "Client Name": CLIENT_NAME,
       Game: gameName,
       "Item Type": product.item_type?.name ?? activeItemType?.name ?? null,

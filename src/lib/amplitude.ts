@@ -21,9 +21,9 @@ import { config } from "@/config/config";
  */
 export const EVENT = {
   VISIT_PRODUCT_CATALOGUE: "Visit Product Catalogue",
-  VISIT_PRODUCT_DETAIL: "Visit Product Detail",
+  VISIT_PRODUCT_DESCRIPTION: "Visit Product Description",
   VISIT_CHECKOUT_PAGE: "Visit Checkout Page",
-  CREATE_TRANSACTION: "Create Transaction",
+  VISIT_ORDER_DETAIL_PAGE: "Visit Order Detail Page",
 } as const;
 
 /** Amplitude "Client Name" property value — shared across all events. */
@@ -53,11 +53,16 @@ export function initAmplitude(): void {
   amplitude.init(apiKey, {
     autocapture: {
       pageViews: false,
+      sessions: false,
       webVitals: false,
       elementInteractions: false,
       pageUrlEnrichment: false,
     },
     remoteConfig: { fetchRemoteConfig: false },
+    // Disable the 1-second auto-flush timer; events are sent only when
+    // flushAmplitude() is called explicitly (e.g. before navigation).
+    flushIntervalMillis: 0,
+    flushQueueSize: 200,
   });
   initialized = true;
 }
