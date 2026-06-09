@@ -9,11 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@pubnub/chat": "^0.14.2",
     "axios": "^1.15.1",
+    "isomorphic-dompurify": "^3.16.0",
     "next": "16.2.4",
     "next-intl": "^4.9.1",
     "postcss": "^8.5.10",
-    "pubnub": "^11.0.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "server-only": "^0.0.1",
