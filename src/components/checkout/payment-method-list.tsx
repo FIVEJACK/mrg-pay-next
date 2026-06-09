@@ -1,5 +1,6 @@
 "use client";
 
+import { MrgImage } from "@/components/shared/mrg-image";
 import { useMemo, useState } from "react";
 
 import { formatPriceIDR } from "@/lib/format";
@@ -240,12 +241,12 @@ function formatLimitViolation(v: PaymentLimitViolation | null): string {
 function PaymentLogoChip({ method }: { method: PaymentMethod }) {
   if (method.media_url) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <MrgImage
         src={method.media_url}
         alt=""
+        width={56}
+        height={32}
         className="h-8 w-14 shrink-0 object-contain"
-        loading="lazy"
       />
     );
   }

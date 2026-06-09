@@ -1,5 +1,6 @@
 "use client";
 
+import { MrgImage } from "@/components/shared/mrg-image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -277,12 +278,12 @@ function ModalPaymentCard({
       }`}
     >
       {method.media_url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <MrgImage
           src={method.media_url}
           alt=""
+          width={56}
+          height={32}
           className="h-8 w-14 shrink-0 object-contain"
-          loading="lazy"
         />
       ) : (
         <span className="flex h-8 w-14 shrink-0 items-center justify-center rounded-sm bg-(--color-bg-subtle) text-[11px] font-bold leading-none text-(--color-text-secondary)">
