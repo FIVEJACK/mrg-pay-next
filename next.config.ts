@@ -11,19 +11,22 @@ const staticCDNPath = staticCDNUrl
   : "";
 
 const isDev = process.env.NODE_ENV !== "production";
+const pubnubFileHost =
+  "https://pubnub-mnemosyne-files-us-east-1-prd.s3.dualstack.us-east-1.amazonaws.com";
 
 const cspDirectives: Record<string, Array<string | false>> = {
   "default-src": ["'self'", staticCDNUrl],
   "script-src": ["'self'", "'unsafe-inline'", isDev && "'unsafe-eval'", staticCDNUrl],
   "style-src": ["'self'", "'unsafe-inline'", staticCDNUrl],
   "font-src": ["'self'", "data:", staticCDNUrl],
-  "img-src": ["'self'", "data:", "blob:", "https:"],
+  "img-src": ["'self'", "data:", "blob:", "https:", pubnubFileHost],
   "connect-src": [
     "'self'",
     "https://*.pubnub.com",
     "https://*.pndsn.com",
     "wss://*.pubnub.com",
     "wss://*.pndsn.com",
+    pubnubFileHost,
     isDev && "ws:",
   ],
   "frame-src": ["'self'"],

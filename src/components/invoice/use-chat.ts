@@ -3,10 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { partnerBrowserApi, PartnerApiError } from "@/lib/partner-api/browser-client";
+import { linkify } from "@/lib/linkify";
 
-import { usePubNubChat, type ChatMessage } from "./pubnub-chat";
+import { usePubNubChat, type ChatAttachment, type ChatMessage } from "./pubnub-chat";
 
-export type { ChatMessage };
+export type { ChatAttachment, ChatMessage };
+
+/** Reject attachments larger than this before attempting the upload. */
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 
 export const SYSTEM_GREETING: ChatMessage = {
   id: "system-welcome",
@@ -37,6 +41,7 @@ export function useChat({ orderId, buyerId, sellerId, buyerName }: UseChatArgs) 
   const [messages, setMessages] = useState<ChatMessage[]>([SYSTEM_GREETING]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [attaching, setAttaching] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -62,11 +67,10 @@ export function useChat({ orderId, buyerId, sellerId, buyerName }: UseChatArgs) 
     });
   }, []);
 
-  const { ready, historyLoading, publish } = usePubNubChat({
+  const { ready, historyLoading, publish, sendFile } = usePubNubChat({
     token,
     channel: `non_order_partnership_${orderId}_${buyerId}_${sellerId}`,
     buyerId,
-    buyerName,
     onMessage: handleIncoming,
   });
 
@@ -76,18 +80,21 @@ export function useChat({ orderId, buyerId, sellerId, buyerName }: UseChatArgs) 
     setSendError(null);
     setSending(true);
     setDraft("");
+    // Convert URLs in the typed text to anchors; the body is rendered as
+    // (sanitized) HTML on both ends.
+    const html = linkify(text);
     // Optimistic echo so the buyer sees their message instantly — `publish`
     // assigns a matching id that we dedupe against when PubNub echoes back.
     const id = `msg-${Date.now()}`;
     handleIncoming({
       id,
       author: buyerName ?? "Saya",
-      text,
+      text: html,
       timestamp: formatNowTime(),
       authoredByBuyer: true,
     });
     try {
-      await publish(text, id);
+      await publish(html, id);
     } catch (err) {
       // Roll back the optimistic bubble on failure.
       setMessages((prev) => prev.filter((m) => m.id !== id));
@@ -95,6 +102,42 @@ export function useChat({ orderId, buyerId, sellerId, buyerName }: UseChatArgs) 
       setSendError(err instanceof Error ? err.message : "Tidak dapat mengirim pesan.");
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleSendFile(file: File) {
+    if (!file) return;
+    setSendError(null);
+    if (!file.type.startsWith("image/")) {
+      setSendError("Hanya gambar yang dapat dikirim.");
+      return;
+    }
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      setSendError("Ukuran gambar maksimal 5 MB.");
+      return;
+    }
+    setAttaching(true);
+    const id = `file-${Date.now()}`;
+    // Show the picked image immediately via a local object URL; the live echo
+    // carries the same `localId` in meta, so `handleIncoming` dedupes it
+    // (keeping this preview). On reload, history supplies the hosted URL.
+    const previewUrl = URL.createObjectURL(file);
+    handleIncoming({
+      id,
+      author: buyerName ?? "Saya",
+      text: "",
+      timestamp: formatNowTime(),
+      authoredByBuyer: true,
+      attachment: { url: previewUrl, name: file.name, mimeType: file.type, isImage: true },
+    });
+    try {
+      await sendFile(file, id);
+    } catch (err) {
+      setMessages((prev) => prev.filter((m) => m.id !== id));
+      URL.revokeObjectURL(previewUrl);
+      setSendError(err instanceof Error ? err.message : "Tidak dapat mengirim gambar.");
+    } finally {
+      setAttaching(false);
     }
   }
 
@@ -106,6 +149,8 @@ export function useChat({ orderId, buyerId, sellerId, buyerName }: UseChatArgs) 
     setDraft,
     sending,
     handleSend,
+    attaching,
+    handleSendFile,
     chatConnected,
     historyLoading,
     authError,

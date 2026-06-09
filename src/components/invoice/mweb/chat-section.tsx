@@ -111,8 +111,19 @@ function ChatSheet({
   chat: ReturnType<typeof useChat>;
   onClose: () => void;
 }) {
-  const { messages, draft, setDraft, sending, handleSend, chatConnected, historyLoading, authError, sendError } =
-    chat;
+  const {
+    messages,
+    draft,
+    setDraft,
+    sending,
+    handleSend,
+    attaching,
+    handleSendFile,
+    chatConnected,
+    historyLoading,
+    authError,
+    sendError,
+  } = chat;
 
   // Auto-scroll to the latest bubble on open and whenever messages change.
   const messagesRef = useRef<HTMLDivElement>(null);
@@ -173,6 +184,9 @@ function ChatSheet({
         canSend={chatConnected && draft.trim().length > 0 && !sending}
         sending={sending}
         onSend={handleSend}
+        onAttach={handleSendFile}
+        canAttach={chatConnected}
+        attaching={attaching}
       />
     </div>
   );
