@@ -3,8 +3,9 @@
 import { useEffect, useRef } from "react";
 
 import { DotsIcon, PaperclipIcon, SendIcon } from "@/components/icon";
+import { HtmlContent } from "@/components/shared/html-content";
 
-import { useChat, type ChatMessage } from "./use-chat";
+import { useChat, type ChatAttachment, type ChatMessage } from "./use-chat";
 
 type ChatPanelProps = {
   orderId: number;
@@ -25,6 +26,8 @@ export function ChatPanel({ orderId, buyerId, sellerId, buyerName, bare }: ChatP
     setDraft,
     sending,
     handleSend,
+    attaching,
+    handleSendFile,
     chatConnected,
     historyLoading,
     authError,
@@ -83,6 +86,9 @@ export function ChatPanel({ orderId, buyerId, sellerId, buyerName, bare }: ChatP
         canSend={chatConnected && draft.trim().length > 0 && !sending}
         sending={sending}
         onSend={handleSend}
+        onAttach={handleSendFile}
+        canAttach={chatConnected}
+        attaching={attaching}
       />
     </section>
   );
@@ -105,14 +111,63 @@ export function ChatSkeleton() {
   );
 }
 
+// Sanitized message bodies are HTML, so style the rendered elements here:
+// Tailwind's preflight strips heading/link defaults, and the source markup is
+// indented (no `whitespace-pre-wrap`, which would surface that as gaps).
+const CHAT_HTML_CLASS =
+  "wrap-break-word [&_h2]:mb-1 [&_h2]:text-base [&_h2]:font-bold [&_h2]:leading-6 [&_h2]:text-(--color-text-title) [&_p]:my-0.5 [&_a]:font-semibold [&_a]:text-(--color-cyan-50) [&_a]:underline";
+
+function ChatBubbleBody({ message }: { message: ChatMessage }) {
+  return (
+    <>
+      {message.attachment && <ChatAttachmentView attachment={message.attachment} />}
+      {message.text && (
+        <HtmlContent
+          data={message.text}
+          draggable={false}
+          allowedTags={["a", "iframe"]}
+          className={CHAT_HTML_CLASS}
+        />
+      )}
+      <p className="mt-1 text-right text-xs text-(--color-text-subdued)">
+        {message.timestamp}
+      </p>
+    </>
+  );
+}
+
+function ChatAttachmentView({ attachment }: { attachment: ChatAttachment }) {
+  if (attachment.isImage) {
+    return (
+      <a href={attachment.url} target="_blank" rel="noopener noreferrer" className="mb-1 block">
+        {/* PubNub file URLs aren't a configured next/image host, so use a plain img. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={attachment.url}
+          alt={attachment.name}
+          className="max-h-60 w-auto max-w-full rounded-lg object-cover"
+        />
+      </a>
+    );
+  }
+  return (
+    <a
+      href={attachment.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mb-1 flex items-center gap-2 font-semibold text-(--color-cyan-50) underline"
+    >
+      <PaperclipIcon className="size-4 shrink-0" />
+      <span className="wrap-break-word">{attachment.name}</span>
+    </a>
+  );
+}
+
 export function ChatBubble({ message }: { message: ChatMessage }) {
   if (message.author === "system") {
     return (
-      <div className="max-w-[80%] self-start rounded-2xl rounded-bl-sm border-l-2 border-(--color-border) bg-(--color-bg-subtle) px-4 py-3 text-sm leading-5 text-(--color-text-body)">
-        <p className="whitespace-pre-wrap">{message.text}</p>
-        <p className="mt-1 text-right text-xs text-(--color-text-subdued)">
-          {message.timestamp}
-        </p>
+      <div className="max-w-[80%] self-start rounded-2xl rounded-bl-sm bg-(--color-surface-focus) px-4 py-3 text-sm leading-5 text-(--color-text-body)">
+        <ChatBubbleBody message={message} />
       </div>
     );
   }
@@ -120,20 +175,13 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
   const isBuyer = message.authoredByBuyer;
   return (
     <div
-      className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-5 ${
+      className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-5 text-(--color-text-body) ${
         isBuyer
-          ? "self-end bg-(--color-brand) text-white"
-          : "self-start border border-(--color-border-low) bg-white text-(--color-text-body)"
+          ? "self-end bg-(--color-surface-focus)"
+          : "self-start border border-(--color-border-low) bg-white"
       }`}
     >
-      <p className="whitespace-pre-wrap">{message.text}</p>
-      <p
-        className={`mt-1 text-right text-xs ${
-          isBuyer ? "text-white/70" : "text-(--color-text-subdued)"
-        }`}
-      >
-        {message.timestamp}
-      </p>
+      <ChatBubbleBody message={message} />
     </div>
   );
 }
@@ -144,13 +192,20 @@ export function ChatComposer({
   canSend,
   sending,
   onSend,
+  onAttach,
+  canAttach,
+  attaching,
 }: {
   draft: string;
   onDraftChange: (v: string) => void;
   canSend: boolean;
   sending: boolean;
   onSend: () => void;
+  onAttach: (file: File) => void;
+  canAttach: boolean;
+  attaching: boolean;
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   return (
     <form
       onSubmit={(e) => {
@@ -160,12 +215,26 @@ export function ChatComposer({
       }}
       className="flex items-center gap-3 border-t border-(--color-border-low) px-6 py-4"
     >
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onAttach(file);
+          // Reset so picking the same file again still fires onChange.
+          e.target.value = "";
+        }}
+      />
       <button
         type="button"
-        aria-label="Lampirkan berkas"
-        className="text-(--color-text-subdued) transition hover:text-(--color-text-body)"
+        aria-label="Lampirkan gambar"
+        disabled={!canAttach || attaching}
+        onClick={() => fileInputRef.current?.click()}
+        className="text-(--color-text-subdued) transition hover:text-(--color-text-body) disabled:cursor-not-allowed disabled:opacity-40"
       >
-        <PaperclipIcon className="size-5" />
+        {attaching ? <DotsIcon className="size-5" /> : <PaperclipIcon className="size-5" />}
       </button>
       <input
         type="text"

@@ -1,9 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import PubNub from "pubnub";
+import { Chat, type Channel, type Message } from "@pubnub/chat";
 
 import { config } from "@/config/config";
+
+export type ChatAttachment = {
+  /** Download URL (PubNub-hosted, signed with the PAM auth token + uuid). */
+  url: string;
+  name: string;
+  mimeType?: string;
+  isImage: boolean;
+};
 
 export type ChatMessage = {
   id: string;
@@ -11,46 +19,56 @@ export type ChatMessage = {
   text: string;
   timestamp: string;
   authoredByBuyer: boolean;
+  attachment?: ChatAttachment;
 };
 
 type UsePubNubChatOptions = {
   /** Chat token from POST /partner/v1/chat/authenticate. Null disables the client. */
   token: string | null;
-  /** Channel name, e.g. `non_order_partner_{order_id}`. */
+  /** Channel id, e.g. `non_order_partnership_{order_id}_{buyer_id}_{seller_id}`. */
   channel: string;
-  /** Stable identifier used as PubNub `userId`. */
+  /** Buyer id; the PubNub user id is `buyer_{buyerId}`. */
   buyerId: string;
-  /** Friendly display name attached to outgoing payloads. */
-  buyerName?: string;
   onMessage: (msg: ChatMessage) => void;
 };
 
 type UsePubNubChatResult = {
   ready: boolean;
-  /** True while `fetchMessages` is still pulling the channel's history. */
+  /** True while `getHistory` is still pulling the channel's past messages. */
   historyLoading: boolean;
   /**
-   * Publish a message. Caller may pass a pre-computed `id` so an optimistic
-   * local bubble dedupes against the PubNub broadcast loop-back.
+   * Publish a text message. `localId` is echoed back via the message `meta` so
+   * an optimistic local bubble dedupes against the live broadcast loop-back.
    */
-  publish: (text: string, id?: string) => Promise<void>;
+  publish: (text: string, localId?: string) => Promise<void>;
+  /**
+   * Upload + send an image as a PubNub file message via `Channel.sendText`.
+   * `localId` rides in `meta` for the same optimistic dedupe as {@link publish}.
+   */
+  sendFile: (file: File, localId?: string) => Promise<void>;
 };
 
+/**
+ * Live chat over the high-level `@pubnub/chat` SDK. Mounts a {@link Chat}
+ * instance scoped to the buyer, resolves the {@link Channel}, streams live
+ * messages, and replays history — exposing the same message list / send API the
+ * UI consumed under the previous core-SDK implementation.
+ */
 export function usePubNubChat({
   token,
   channel,
   buyerId,
-  buyerName,
   onMessage,
 }: UsePubNubChatOptions): UsePubNubChatResult {
-  const clientRef = useRef<PubNub | null>(null);
+  const chatRef = useRef<Chat | null>(null);
+  const channelRef = useRef<Channel | null>(null);
   const [ready, setReady] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  // Keep a ref to the latest onMessage so the subscribe listener (set up
-  // once per channel) always calls the current callback. Updating inside
-  // useLayoutEffect avoids the React 19 "Cannot update ref during render"
-  // error while still running before any user-facing event.
+  const userId = `buyer_${buyerId}`;
+
+  // Keep a ref to the latest onMessage so the connect listener (set up once per
+  // channel) always calls the current callback.
   const onMessageRef = useRef(onMessage);
   useLayoutEffect(() => {
     onMessageRef.current = onMessage;
@@ -65,176 +83,139 @@ export function usePubNubChat({
       return;
     }
 
-    const client = new PubNub({
-      publishKey: config.pubnub.publishKey,
-      subscribeKey: config.pubnub.subscribeKey,
-      userId: `buyer_${buyerId}`,
-    });
-    // Apply the PAM v3 token via setToken — the legacy `authKey` init option
-    // doesn't authorize v3 (CBOR) tokens, so publishes silently get rejected
-    // and the message never reaches the channel.
-    client.setToken(token);
-    clientRef.current = client;
+    let cancelled = false;
+    let disconnect: (() => void) | undefined;
 
-    const listener: PubNub.Listener = {
-      message: (event) => {
-        const incoming = normalizeMessage(event, buyerId);
-        if (incoming) onMessageRef.current(incoming);
-      },
-      status: (event) => {
-        if (event.category === "PNConnectedCategory") {
-          setReady(true);
+    (async () => {
+      setHistoryLoading(true);
+      try {
+        const chat = await Chat.init({
+          publishKey: config.pubnub.publishKey,
+          subscribeKey: config.pubnub.subscribeKey,
+          userId,
+          authKey: token,
+        });
+        // Authorize the PAM v3 (CBOR) token for live subscribe/publish — the
+        // `authKey` init option alone doesn't always apply it to those ops.
+        chat.sdk.setToken(token);
+        if (cancelled) {
+          chat.sdk.stop();
           return;
         }
-        if (
-          event.category === "PNAccessDeniedCategory" ||
-          event.category === "PNBadRequestCategory" ||
-          event.category === "PNNetworkIssuesCategory"
-        ) {
-          // Surface auth/network failures instead of letting publish pretend it
-          // worked. The hook keeps `ready=false` so the composer stays gated.
-          console.warn(
-            `[pubnub-chat] subscribe failed: ${event.category}`,
-            (event as { errorData?: unknown }).errorData,
-          );
-          setReady(false);
-        }
-      },
-    };
-    client.addListener(listener);
-    client.subscribe({ channels: [channel] });
+        chatRef.current = chat;
 
-    // Pull past messages from storage so the buyer sees their thread after a
-    // reload. Subscribe only delivers live messages from the moment of
-    // connection onward, so this is the only way to repopulate history.
-    let historyCancelled = false;
-    setHistoryLoading(true);
-    client
-      .fetchMessages({ channels: [channel], count: 50 })
-      .then((res) => {
-        if (historyCancelled) return;
-        const items = res?.channels?.[channel] ?? [];
-        for (const item of items) {
-          const normalized = normalizeFetchedMessage(item, buyerId);
+        // Resolve the channel; create it if no App Context metadata exists yet.
+        let ch = await chat.getChannel(channel);
+        if (!ch) ch = await chat.createPublicConversation({ channelId: channel });
+        if (cancelled) return;
+        channelRef.current = ch;
+
+        // Subscribe to live messages before replaying history so nothing
+        // arriving mid-fetch is missed (dedupe in the store handles overlap).
+        disconnect = ch.connect((message) => {
+          const normalized = normalizeMessage(message, buyerId, token, userId);
+          if (normalized) onMessageRef.current(normalized);
+        });
+        setReady(true);
+
+        const history = await ch.getHistory({ count: 50 });
+        if (cancelled) return;
+        for (const message of history.messages) {
+          const normalized = normalizeMessage(message, buyerId, token, userId);
           if (normalized) onMessageRef.current(normalized);
         }
-      })
-      .catch((err: unknown) => {
-        console.warn("[pubnub-chat] fetchMessages failed:", err);
-      })
-      .finally(() => {
-        if (!historyCancelled) setHistoryLoading(false);
-      });
+      } catch (err) {
+        if (!cancelled) console.warn("[pubnub-chat] init/connect failed:", err);
+      } finally {
+        if (!cancelled) setHistoryLoading(false);
+      }
+    })();
 
     return () => {
-      historyCancelled = true;
+      cancelled = true;
       setReady(false);
-      client.removeListener(listener);
-      client.unsubscribe({ channels: [channel] });
-      client.stop();
-      clientRef.current = null;
+      disconnect?.();
+      chatRef.current?.sdk.stop();
+      chatRef.current = null;
+      channelRef.current = null;
     };
-  }, [token, channel, buyerId]);
+  }, [token, channel, buyerId, userId]);
 
-  const publish = useCallback(
-    async (text: string, id?: string) => {
-      const client = clientRef.current;
-      if (!client) throw new Error("Chat is not connected yet.");
-      const res = await client.publish({
-        channel,
-        message: {
-          id: id ?? `msg-${Date.now()}`,
-          text,
-          author: buyerName ?? "Buyer",
-          user_id: buyerId,
-          timestamp: new Date().toISOString(),
-        },
-        // Persist so the seller / a later connector can read the message via
-        // history. Default depends on the keyset; force it on to be safe.
-        storeInHistory: true,
-      });
-      // PubNub publish resolves even on error responses (the promise carries
-      // `error: true`). Inspect explicitly so failures actually surface.
-      if ((res as { error?: boolean }).error) {
-        const err =
-          (res as { errorData?: { message?: string } }).errorData?.message ??
-          "Publish rejected by PubNub.";
-        throw new Error(err);
-      }
-    },
-    [channel, buyerId, buyerName],
-  );
+  const publish = useCallback(async (text: string, localId?: string) => {
+    const ch = channelRef.current;
+    if (!ch) throw new Error("Chat is not connected yet.");
+    await ch.sendText(text, localId ? { meta: { localId } } : undefined);
+  }, []);
 
-  return { ready, historyLoading, publish };
-}
+  const sendFile = useCallback(async (file: File, localId?: string) => {
+    const ch = channelRef.current;
+    if (!ch) throw new Error("Chat is not connected yet.");
+    await ch.sendText("", {
+      files: [file],
+      ...(localId ? { meta: { localId } } : {}),
+    });
+  }, []);
 
-type FetchedItem = {
-  message?: unknown;
-  timetoken?: string | number;
-  uuid?: string;
-};
-
-/**
- * Adapter from a `fetchMessages` history item to the same shape
- * `normalizeMessage` consumes — lets us reuse the parsing logic for live and
- * history messages.
- */
-function normalizeFetchedMessage(item: FetchedItem, buyerId: string): ChatMessage | null {
-  if (!item || item.message == null) return null;
-  return normalizeMessage(
-    {
-      channel: "",
-      subscription: null,
-      timetoken: item.timetoken ?? "",
-      publisher: item.uuid ?? "",
-      message: item.message,
-    } as unknown as PubNub.Subscription.Message,
-    buyerId,
-  );
+  return { ready, historyLoading, publish, sendFile };
 }
 
 function normalizeMessage(
-  event: PubNub.Subscription.Message,
+  message: Message,
   buyerId: string,
+  token: string | null,
+  userId: string,
 ): ChatMessage | null {
-  const m = event.message as
-    | { id?: string; text?: string; author?: string; user_id?: string; timestamp?: string }
-    | string
-    | undefined;
-  if (!m) return null;
+  if (message.deleted) return null;
 
-  if (typeof m === "string") {
-    return {
-      id: String(event.timetoken),
-      author: event.publisher ?? "Penjual",
-      text: m,
-      timestamp: tokenToTime(event.timetoken),
-      authoredByBuyer: event.publisher === buyerId,
-    };
-  }
+  const file = message.files?.[0];
+  const attachment = file
+    ? {
+        url: signFileUrl(file.url, token, userId),
+        name: file.name,
+        mimeType: file.type,
+        isImage: isImageFile(file.name, file.type),
+      }
+    : undefined;
 
-  const text = m.text ?? "";
-  if (!text) return null;
+  const text = message.text ?? "";
+  if (!text && !attachment) return null;
+
+  // Live echoes carry our optimistic `localId` in meta so they dedupe against
+  // the local bubble; history messages have no meta, so fall back to timetoken.
+  const localId = (message.meta as { localId?: string } | undefined)?.localId;
+
   return {
-    id: m.id ?? String(event.timetoken),
-    author: m.author ?? event.publisher ?? "Penjual",
+    id: localId ?? message.timetoken,
+    author: message.userId || "Penjual",
     text,
-    timestamp: m.timestamp ? formatIsoTime(m.timestamp) : tokenToTime(event.timetoken),
-    authoredByBuyer: (m.user_id ?? event.publisher) === buyerId,
+    timestamp: tokenToTime(message.timetoken),
+    authoredByBuyer: message.userId === userId || message.userId === buyerId,
+    attachment,
   };
+}
+
+// PubNub file URLs are gated by Access Manager; the same auth token + UUID must
+// be appended as query params before the browser can load the file.
+function signFileUrl(url: string, token: string | null, userId: string): string {
+  if (!token) return url;
+  try {
+    const signed = new URL(url);
+    signed.searchParams.set("auth", token);
+    signed.searchParams.set("uuid", userId);
+    return signed.toString();
+  } catch {
+    return url;
+  }
+}
+
+function isImageFile(name: string, mimeType?: string): boolean {
+  if (mimeType?.startsWith("image/")) return true;
+  return /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(name);
 }
 
 function tokenToTime(timetoken: string | number): string {
   // PubNub timetokens are nanoseconds since epoch.
   const ms = Number(timetoken) / 1e4;
-  return formatMs(ms);
-}
-
-function formatIsoTime(iso: string): string {
-  return formatMs(new Date(iso).getTime());
-}
-
-function formatMs(ms: number): string {
   if (!Number.isFinite(ms)) return "";
   return new Date(ms).toLocaleTimeString("id-ID", {
     hour: "2-digit",
