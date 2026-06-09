@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
-
 import { IMAGE_HOSTS } from "./src/lib/image-hosts";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
@@ -26,6 +25,7 @@ const cspDirectives: Record<string, Array<string | false>> = {
     "https://*.pndsn.com",
     "wss://*.pubnub.com",
     "wss://*.pndsn.com",
+    "https://*.amplitude.com",
     pubnubFileHost,
     isDev && "ws:",
   ],

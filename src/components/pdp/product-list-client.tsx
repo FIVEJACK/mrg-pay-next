@@ -14,6 +14,8 @@ import {
   ResultsCountSkeleton,
 } from "@/components/pdp/skeletons";
 import { CLEAR_SELECTION, postProductSelection } from "@/components/pdp/product-list-messaging";
+import { CLIENT_NAME, EVENT, trackEvent } from "@/lib/amplitude";
+import { getItemCategoryName } from "@/lib/item-category";
 import { partnerBrowserApi } from "@/lib/partner-api/browser-client";
 import type {
   B2b2cAttribute,
@@ -47,6 +49,8 @@ type Props = {
   hasServer: boolean;
   filters: Filters;
   mobile?: boolean;
+  gameName: string;
+  country: string;
 };
 
 const PER_PAGE = 20;
@@ -62,6 +66,8 @@ export function ProductListClient({
   hasServer,
   filters: initialFilters,
   mobile,
+  gameName,
+  country,
 }: Props) {
   const [activeItemTypeId, setActiveItemTypeId] = useState(initialItemTypeId);
   const [filters, setFilters] = useState<Filters>(initialFilters);
@@ -96,16 +102,22 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   useEffect(() => {
     const ctrl = new AbortController();
     let cancelled = false;
-    setDetailLoading(true);
-    partnerBrowserApi
-      .getGameInfoDetail(activeItemTypeId, {
-        gameId,
-        hashCode,
-        signal: ctrl.signal,
-      })
-      .then((v) => !cancelled && setDetail(v))
-      .catch(() => !cancelled && setDetail(null))
-      .finally(() => !cancelled && setDetailLoading(false));
+    async function loadDetail() {
+      setDetailLoading(true);
+      try {
+        const v = await partnerBrowserApi.getGameInfoDetail(activeItemTypeId, {
+          gameId,
+          hashCode,
+          signal: ctrl.signal,
+        });
+        if (!cancelled) setDetail(v);
+      } catch {
+        if (!cancelled) setDetail(null);
+      } finally {
+        if (!cancelled) setDetailLoading(false);
+      }
+    }
+    loadDetail();
     return () => {
       cancelled = true;
       ctrl.abort();
@@ -115,34 +127,36 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   useEffect(() => {
     const ctrl = new AbortController();
     let cancelled = false;
-    setProductsLoading(true);
-    const scopedAttributes = attributes.filter((a) => a.item_type_id === activeItemTypeId);
-    const rawAttributes = scopedAttributes.length > 0 ? filters.attributes : {};
-    const attributePayload = buildAttributePayload(rawAttributes, scopedAttributes);
-    const hasAttributePayload = Object.keys(attributePayload).length > 0;
-
-    partnerBrowserApi
-      .getProducts(
-        {
-          game_id: gameId,
-          item_type_id: activeItemTypeId,
-          item_info_group_id: filters.itemInfoGroupId,
-          item_info_id: filters.itemInfoId,
-          server_id: filters.serverId,
-          page: filters.page,
-          per_page: PER_PAGE,
-          keyword: filters.keyword,
-          sort: filters.sort,
-          ...(hasAttributePayload ? { attributes: attributePayload } : {}),
-        },
-        { hashCode, signal: ctrl.signal },
-      )
-      .then((v) => {
-        if (cancelled) return;
-        setProductList(v);
-      })
-      .catch(() => !cancelled && setProductList(null))
-      .finally(() => !cancelled && setProductsLoading(false));
+    async function loadProducts() {
+      setProductsLoading(true);
+      const scopedAttributes = attributes.filter((a) => a.item_type_id === activeItemTypeId);
+      const rawAttributes = scopedAttributes.length > 0 ? filters.attributes : {};
+      const attributePayload = buildAttributePayload(rawAttributes, scopedAttributes);
+      const hasAttributePayload = Object.keys(attributePayload).length > 0;
+      try {
+        const v = await partnerBrowserApi.getProducts(
+          {
+            game_id: gameId,
+            item_type_id: activeItemTypeId,
+            item_info_group_id: filters.itemInfoGroupId,
+            item_info_id: filters.itemInfoId,
+            server_id: filters.serverId,
+            page: filters.page,
+            per_page: PER_PAGE,
+            keyword: filters.keyword,
+            sort: filters.sort,
+            ...(hasAttributePayload ? { attributes: attributePayload } : {}),
+          },
+          { hashCode, signal: ctrl.signal },
+        );
+        if (!cancelled) setProductList(v);
+      } catch {
+        if (!cancelled) setProductList(null);
+      } finally {
+        if (!cancelled) setProductsLoading(false);
+      }
+    }
+    loadProducts();
     return () => {
       cancelled = true;
       ctrl.abort();
@@ -151,6 +165,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     hashCode,
     gameId,
     activeItemTypeId,
+    attributes,
     filters.itemInfoGroupId,
     filters.itemInfoId,
     filters.serverId,
@@ -182,6 +197,13 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   function handleSelectItemType(id: number) {
     if (id === activeItemTypeId) return;
+    const itemType = itemTypes.find((t) => t.id === id);
+    trackEvent(EVENT.VISIT_PRODUCT_CATALOGUE, {
+      "Client Name": CLIENT_NAME,
+      Game: gameName,
+      "Item Type": itemType?.name ?? null,
+      Country: country,
+    });
     // Reset item_info_group_id / item_info_id since they don't apply across types.
     // Attribute filters are also b2b2c-scoped — drop them when leaving the hash type.
     // server_id is game-scoped so it stays.
@@ -219,6 +241,20 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     productList?.total_page ??
     (totalItem > 0 ? Math.ceil(totalItem / itemPerPage) : 1);
   const groups = detail?.item_info_group ?? [];
+
+  function handleSelectProduct(product: Product) {
+    setSelectedProduct(product);
+    trackEvent(EVENT.VISIT_PRODUCT_DESCRIPTION, {
+      "Client Name": CLIENT_NAME,
+      Game: gameName,
+      "Item Type": product.item_type?.name ?? activeItemType?.name ?? null,
+      "Item Category": getItemCategoryName(product.item_category_id),
+      "Device Env": mobile ? "Mobile" : "Desktop",
+      "Product ID": product.id,
+      "Product Name": product.name,
+      Country: country,
+    });
+  }
 
   return (
     <>
@@ -307,7 +343,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
               <ProductGrid
                 products={products}
                 selectedId={selectedProduct?.id}
-                onSelect={setSelectedProduct}
+                onSelect={handleSelectProduct}
                 compact={selectedProduct !== null}
                 mobile={mobile}
               />

@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@amplitude/analytics-browser": "^2.43.0",
     "@pubnub/chat": "^0.14.2",
     "axios": "^1.15.1",
     "isomorphic-dompurify": "^3.16.0",

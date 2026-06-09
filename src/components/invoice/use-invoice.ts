@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { CLIENT_NAME, EVENT, trackEvent } from "@/lib/amplitude";
 import { partnerBrowserApi, PartnerApiError } from "@/lib/partner-api/browser-client";
 import type { TransactionDetail } from "@/lib/partner-api";
 
@@ -32,6 +33,18 @@ export function useInvoice({ transactionUuid }: InvoiceViewProps) {
         });
         if (cancelled) return;
         setTransaction(detail);
+        const order = detail.orders[0];
+        trackEvent(EVENT.VISIT_ORDER_DETAIL_PAGE, {
+          "Client Name": CLIENT_NAME,
+          Game: order?.game_name ?? null,
+          "Item Type Name": order?.item_type_name ?? null,
+          "Device Env": window.innerWidth < 768 ? "Mobile" : "Desktop",
+          "Product ID": order?.product_id ?? null,
+          "Product Name": order?.product_name ?? null,
+          Country: detail.buyer_country ?? null,
+          "Transaction Number": detail.transaction_number ?? null,
+          "Order Number": order?.order_number ?? null,
+        });
 
         const gameId = detail.orders?.[0]?.game_id;
         if (gameId) {
