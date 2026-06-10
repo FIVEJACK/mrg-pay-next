@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import {
   ChatBubble,
@@ -131,6 +131,20 @@ function ChatSheet({
     const el = messagesRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
+
+  const onCloseRef = useRef(onClose);
+  useLayoutEffect(() => {
+    onCloseRef.current = onClose;
+  });
+  useEffect(() => {
+    window.history.pushState({ chatSheet: true }, "");
+    const handlePop = () => onCloseRef.current();
+    window.addEventListener("popstate", handlePop);
+    return () => {
+      window.removeEventListener("popstate", handlePop);
+      if (window.history.state?.chatSheet) window.history.back();
+    };
+  }, []);
 
   return (
     <div className="animate-slide-up fixed inset-0 z-50 flex flex-col bg-white" role="dialog" aria-modal="true">
