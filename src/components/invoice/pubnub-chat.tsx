@@ -104,10 +104,13 @@ export function usePubNubChat({
         }
         chatRef.current = chat;
 
-        // Resolve the channel; create it if no App Context metadata exists yet.
-        let ch = await chat.getChannel(channel);
-        if (!ch) ch = await chat.createPublicConversation({ channelId: channel });
+        // Join the channel provisioned by the backend; never create it here.
+        const ch = await chat.getChannel(channel);
         if (cancelled) return;
+        if (!ch) {
+          console.warn(`[pubnub-chat] channel ${channel} does not exist yet.`);
+          return;
+        }
         channelRef.current = ch;
 
         // Subscribe to live messages before replaying history so nothing

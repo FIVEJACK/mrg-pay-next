@@ -2,17 +2,14 @@ import type { TransactionDetail } from "@/lib/partner-api";
 
 type OrderDetailCardProps = {
   transaction: TransactionDetail;
-  /** Label for the user-identifier field (e.g. "Roblox Username"). */
-  userIdLabel: string;
   bare?: boolean;
 };
 
-export function OrderDetailCard({ transaction, userIdLabel, bare }: OrderDetailCardProps) {
+export function OrderDetailCard({ transaction, bare }: OrderDetailCardProps) {
   const order = transaction.orders[0];
   if (!order) return null;
 
   const requiredInfo = parseRequiredInfo(order.required_information);
-  const userId = requiredInfo?.user_id ?? "—";
 
   return (
     <section
@@ -51,7 +48,10 @@ export function OrderDetailCard({ transaction, userIdLabel, bare }: OrderDetailC
       </div>
 
       <dl className="flex flex-col gap-3">
-        <Row label={userIdLabel} value={userId} bare={bare} />
+        {requiredInfo &&
+          Object.entries(requiredInfo).map(([key, value]) => (
+            <Row key={key} label={humanizeKey(key)} value={value || "—"} bare={bare} />
+          ))}
         <Row label="Jumlah" value={String(order.quantity)} bare={bare} />
         <Row label="Email" value={order.buyer_email ?? "—"} bare={bare} />
       </dl>
@@ -78,6 +78,15 @@ function Row({ label, value, bare }: { label: string; value: string; bare?: bool
       </dd>
     </div>
   );
+}
+
+// Turn a `required_information` field key (e.g. "user_id") into a readable
+// label (e.g. "User Id"). The order payload carries no labels of its own.
+function humanizeKey(key: string): string {
+  return key
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .trim();
 }
 
 function parseRequiredInfo(raw: string | undefined): Record<string, string> | null {
