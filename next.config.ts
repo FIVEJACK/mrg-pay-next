@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
-import { IMAGE_HOSTS } from "@/lib/image-hosts";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -38,10 +37,21 @@ const csp = Object.entries(cspDirectives)
   .map(([directive, sources]) => `${directive} ${sources.filter(Boolean).join(" ")}`)
   .join("; ");
 
-const imagePatterns = [...IMAGE_HOSTS, "**.pndsn.com"].map((hostname) => ({
-  protocol: "https" as const,
-  hostname,
-}));
+const imagePatterns = [
+  "itemku-upload.s3.ap-southeast-1.amazonaws.com",
+  "itemku-upload.s3-ap-southeast-1.amazonaws.com",
+  "itemku-upload-alpha.s3.ap-southeast-1.amazonaws.com",
+  "d1x91p7vw3vuq8.cloudfront.net",
+  "files.itemku.com",
+  "s3-ap-southeast-1.amazonaws.com",
+  "itemku-assets.s3.ap-southeast-1.amazonaws.com",
+  "itemku-app.s3-ap-southeast-1.amazonaws.com",
+  "itemku-assets.s3-ap-southeast-1.amazonaws.com",
+  "tr.rbxcdn.com",
+  "**.pndsn.com"].map((hostname) => ({
+    protocol: "https" as const,
+    hostname,
+  }));
 
 const nextConfig: NextConfig = {
   assetPrefix: staticCDNPath,
