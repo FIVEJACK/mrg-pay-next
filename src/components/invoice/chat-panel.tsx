@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 
 import { DotsIcon, PaperclipIcon, SendIcon } from "@/components/icon";
 import { HtmlContent } from "@/components/shared/html-content";
+import { getSellerActivity } from "@/lib/format-activity";
 
 import { useChat, type ChatAttachment, type ChatMessage } from "./use-chat";
 
@@ -12,6 +13,7 @@ type ChatPanelProps = {
   buyerId: string;
   sellerId: number;
   buyerName?: string;
+  paidAt?: string | null;
   /**
    * Mobile (mweb) full-bleed treatment: a flush white section instead of a
    * rounded bordered card on the page background.
@@ -19,7 +21,7 @@ type ChatPanelProps = {
   bare?: boolean;
 };
 
-export function ChatPanel({ orderId, buyerId, sellerId, buyerName, bare }: ChatPanelProps) {
+export function ChatPanel({ orderId, buyerId, sellerId, buyerName, paidAt, bare }: ChatPanelProps) {
   const {
     messages,
     draft,
@@ -32,7 +34,8 @@ export function ChatPanel({ orderId, buyerId, sellerId, buyerName, bare }: ChatP
     historyLoading,
     authError,
     sendError,
-  } = useChat({ orderId, buyerId, sellerId, buyerName });
+    sellerLastActivity,
+  } = useChat({ orderId, buyerId, sellerId, buyerName, paidAt });
 
   // Auto-scroll the messages container to the latest bubble whenever messages
   // change (history load, live receive, or local send all push into the same
@@ -50,13 +53,16 @@ export function ChatPanel({ orderId, buyerId, sellerId, buyerName, bare }: ChatP
         bare ? "" : "rounded-2xl border border-(--color-border-low)"
       }`}
     >
-      <header className="border-b border-(--color-border-low) px-6 py-5">
-        <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
-          Chat
-        </h2>
-        <p className="mt-1 text-sm leading-5 text-(--color-text-body)">
-          Buat janji dan atur pengiriman produk yang dibeli lewat chat.
-        </p>
+      <header className="flex items-start justify-between gap-3 border-b border-(--color-border-low) px-6 py-5">
+        <div className="min-w-0">
+          <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
+            Chat
+          </h2>
+          <p className="mt-1 text-sm leading-5 text-(--color-text-body)">
+            Buat janji dan atur pengiriman produk yang dibeli lewat chat.
+          </p>
+        </div>
+        <SellerStatusPill lastActivity={sellerLastActivity} />
       </header>
 
       <div ref={messagesRef} className="flex h-[320px] flex-col gap-3 overflow-y-auto px-6 py-4">
@@ -67,8 +73,12 @@ export function ChatPanel({ orderId, buyerId, sellerId, buyerName, bare }: ChatP
           Hari ini
         </p>
         {historyLoading && <ChatSkeleton />}
-        {messages.map((msg) => (
-          <ChatBubble key={msg.id} message={msg} />
+        {messages.map((msg, i) => (
+          <ChatBubble
+            key={msg.id}
+            message={msg}
+            showSenderName={shouldShowSenderName(messages, i)}
+          />
         ))}
         {(authError || sendError) && (
           <p
@@ -94,6 +104,26 @@ export function ChatPanel({ orderId, buyerId, sellerId, buyerName, bare }: ChatP
   );
 }
 
+/**
+ * Seller presence pill for the chat header: green "Online" when active within
+ * 10 minutes, otherwise a muted "X Menit/Jam/Hari Lalu" relative-time chip.
+ */
+export function SellerStatusPill({ lastActivity }: { lastActivity?: string | null }) {
+  const { online, label } = getSellerActivity(lastActivity);
+  return (
+    <span
+      className={`flex shrink-0 items-center gap-1 rounded-full py-px pl-1 pr-2 text-sm leading-5 ${
+        online ? "bg-[#35c092] text-white" : "bg-(--color-bg-subtle) text-(--color-text-subdued)"
+      }`}
+    >
+      <span
+        className={`size-2.5 shrink-0 rounded-full ${online ? "bg-white" : "bg-(--color-text-subdued)"}`}
+      />
+      {label}
+    </span>
+  );
+}
+
 export function ChatSkeleton() {
   // Alternating left/right shimmer bubbles while fetchMessages is in flight.
   return (
@@ -111,13 +141,30 @@ export function ChatSkeleton() {
   );
 }
 
+/** Branded display name for the partner/seller side of the conversation. */
+export const PARTNER_NAME = "Partner Lapakgaming";
+
+/**
+ * Whether the seller bubble at `index` should show the sender name + verified
+ * badge. Shown on the first bubble of each consecutive run of seller messages
+ * (the system greeting counts as a seller message, so it shows the name too),
+ * never on the buyer's own bubbles.
+ */
+export function shouldShowSenderName(messages: ChatMessage[], index: number): boolean {
+  const msg = messages[index];
+  if (!msg || msg.authoredByBuyer) return false;
+  const prev = messages[index - 1];
+  const prevIsSeller = prev != null && !prev.authoredByBuyer;
+  return !prevIsSeller;
+}
+
 // Sanitized message bodies are HTML, so style the rendered elements here:
 // Tailwind's preflight strips heading/link defaults, and the source markup is
 // indented (no `whitespace-pre-wrap`, which would surface that as gaps).
 const CHAT_HTML_CLASS =
   "wrap-break-word [&_h2]:mb-1 [&_h2]:text-base [&_h2]:font-bold [&_h2]:leading-6 [&_h2]:text-(--color-text-title) [&_p]:my-0.5 [&_a]:font-semibold [&_a]:text-(--color-cyan-50) [&_a]:underline";
 
-function ChatBubbleBody({ message }: { message: ChatMessage }) {
+function ChatMessageBody({ message }: { message: ChatMessage }) {
   return (
     <>
       {message.attachment && <ChatAttachmentView attachment={message.attachment} />}
@@ -129,9 +176,6 @@ function ChatBubbleBody({ message }: { message: ChatMessage }) {
           className={CHAT_HTML_CLASS}
         />
       )}
-      <p className="mt-1 text-right text-xs text-(--color-text-subdued)">
-        {message.timestamp}
-      </p>
     </>
   );
 }
@@ -163,25 +207,75 @@ function ChatAttachmentView({ attachment }: { attachment: ChatAttachment }) {
   );
 }
 
-export function ChatBubble({ message }: { message: ChatMessage }) {
-  if (message.author === "system") {
+export function VerifiedBadge({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" className={className} aria-hidden="true">
+      <circle cx="10" cy="10" r="8" fill="#1111A8" />
+      <path
+        d="M6.4 10.3l2.3 2.3 4.6-4.9"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function DoubleCheckIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className={className}
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M1.5 8.5l3 3 6-7" />
+      <path d="M7.5 11.5l.6.6 6-7" />
+    </svg>
+  );
+}
+
+export function ChatBubble({
+  message,
+  showSenderName,
+}: {
+  message: ChatMessage;
+  showSenderName?: boolean;
+}) {
+  if (message.authoredByBuyer) {
     return (
-      <div className="max-w-[80%] self-start rounded-2xl rounded-bl-sm bg-(--color-surface-focus) px-4 py-3 text-sm leading-5 text-(--color-text-body)">
-        <ChatBubbleBody message={message} />
+      <div className="flex max-w-[85%] flex-col self-end rounded-2xl rounded-br-sm bg-[#d9e2fc] px-3 py-2 text-sm leading-5 text-(--color-text-secondary)">
+        <ChatMessageBody message={message} />
+        <div className="mt-1 flex items-center justify-end gap-1 text-(--color-text-subdued)">
+          <span className="text-[11px] leading-[14px]">{message.timestamp}</span>
+          <DoubleCheckIcon className="size-4" />
+        </div>
       </div>
     );
   }
 
-  const isBuyer = message.authoredByBuyer;
+  // System greeting and partner replies share the grey left bubble; partner
+  // replies show the sender name on the first bubble of a run.
   return (
-    <div
-      className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-5 text-(--color-text-body) ${
-        isBuyer
-          ? "self-end bg-(--color-surface-focus)"
-          : "self-start border border-(--color-border-low) bg-white"
-      }`}
-    >
-      <ChatBubbleBody message={message} />
+    <div className="flex max-w-[85%] flex-col gap-1 self-start rounded-2xl rounded-bl-sm bg-(--color-bg-subtle) px-3 py-2 text-sm leading-5 text-(--color-text-secondary)">
+      {showSenderName && (
+        <div className="flex items-center gap-1">
+          <span className="font-[family-name:var(--font-heading)] text-sm font-bold leading-5 text-(--color-text-title)">
+            {PARTNER_NAME}
+          </span>
+          <VerifiedBadge className="size-4 shrink-0" />
+        </div>
+      )}
+      <ChatMessageBody message={message} />
+      <p className="text-right text-[11px] leading-[14px] text-(--color-text-subdued)">
+        {message.timestamp}
+      </p>
     </div>
   );
 }

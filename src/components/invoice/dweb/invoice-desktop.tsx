@@ -29,6 +29,7 @@ export function InvoiceDesktop(props: InvoiceViewProps) {
               buyerId={buyerId}
               sellerId={order.seller_id}
               buyerName={transaction.buyer_name}
+              paidAt={order.paid_at}
             />
           )}
         </div>
