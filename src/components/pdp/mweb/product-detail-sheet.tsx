@@ -194,10 +194,20 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
                     </>
                   )}
                 </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {product.stock !== undefined && (
+                    <span className="rounded-sm border border-(--color-border) bg-white px-2.5 py-0.5 text-xm text-(--color-text-body)">
+                      Stok: {product.stock.toLocaleString("en-US")}
+                    </span>
+                  )}
+                  <span className="rounded-sm border border-(--color-border) bg-white px-2.5 py-0.5 text-xm text-(--color-text-body)">
+                    Min. beli: {product.wholesale?.[0]?.minimum_order ?? 1}
+                  </span>
+                </div>
               </div>
 
               {/* Tabs */}
-              <div className="mt-4 border-b border-(--color-border-low) px-4">
+              <div className="mt-2 border-b border-(--color-border-low) px-4">
                 <div role="tablist" className="flex gap-4">
                   {(
                     [
@@ -231,7 +241,7 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
                   description ? (
                     <p className="overflow-hidden whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{description}</p>
                   ) : (
-                    <DescriptionFallback product={product} />
+                    <p className="overflow-hidden whitespace-pre-wrap break-words [overflow-wrap:anywhere]">There is no description available for this product.</p>
                   )
                 ) : (
                   <p>Cara {itemTypeName || "transaksi"} akan muncul di sini.</p>
@@ -262,38 +272,5 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
       </div>
     </div>,
     document.body,
-  );
-}
-
-function DescriptionFallback({ product }: { product: Product }) {
-  return (
-    <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-2">
-      {product.item_info?.slug && (
-        <>
-          <dt className="text-(--color-text-subdued)">Item</dt>
-          <dd>{product.item_info.slug}</dd>
-        </>
-      )}
-      {product.server_name && (
-        <>
-          <dt className="text-(--color-text-subdued)">Server</dt>
-          <dd>{product.server_name}</dd>
-        </>
-      )}
-      {product.seller?.shop_name && (
-        <>
-          <dt className="text-(--color-text-subdued)">Seller</dt>
-          <dd>{product.seller.shop_name}</dd>
-        </>
-      )}
-      {product.stock !== undefined && (
-        <>
-          <dt className="text-(--color-text-subdued)">Stock</dt>
-          <dd>{product.stock.toLocaleString("en-US")}</dd>
-        </>
-      )}
-      <dt className="text-(--color-text-subdued)">Delivery</dt>
-      <dd> Face to Face </dd>
-    </dl>
   );
 }

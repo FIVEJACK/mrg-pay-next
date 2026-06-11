@@ -42,7 +42,6 @@ type Props = {
   gameId: number;
   itemTypes: ItemType[];
   initialItemTypeId: number;
-  /** Product-attribute configuration (b2b2c-scoped). */
   attributes: B2b2cAttribute[];
   servers: Server[];
   serverLabel: string | null;

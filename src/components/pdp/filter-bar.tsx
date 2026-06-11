@@ -312,6 +312,28 @@ export function FilterBar({
   return (
     <div>
     <div className="flex items-center gap-3 py-4">
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const fd = new FormData(e.currentTarget);
+          const value = String(fd.get("keyword") ?? "").trim();
+          onChange({ keyword: value || undefined });
+        }}
+        className="flex w-[300px] shrink-0"
+      >
+        <label className="flex h-11 w-full items-center gap-2 rounded-2xl border border-(--color-border) bg-white px-3">
+          <SearchIcon className="size-5 text-(--color-text-subdued)" />
+          <input
+            type="search"
+            name="keyword"
+            defaultValue={keyword}
+            placeholder="Search…"
+            className="w-full bg-transparent text-base text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none"
+          />
+        </label>
+      </form>
+
       <div className="relative flex min-w-0 flex-1 items-center">
         {/* Left scroll arrow */}
         {canScrollLeft && (
@@ -333,28 +355,6 @@ export function FilterBar({
             paddingRight: canScrollRight ? "2.25rem" : undefined,
           }}
         >
-        <form
-          role="search"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const fd = new FormData(e.currentTarget);
-            const value = String(fd.get("keyword") ?? "").trim();
-            onChange({ keyword: value || undefined });
-          }}
-          className="flex w-[300px] shrink-0"
-        >
-          <label className="flex h-11 w-full items-center gap-2 rounded-2xl border border-(--color-border) bg-white px-3">
-            <SearchIcon className="size-5 text-(--color-text-subdued)" />
-            <input
-              type="search"
-              name="keyword"
-              defaultValue={keyword}
-              placeholder="Search…"
-              className="w-full bg-transparent text-base text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none"
-            />
-          </label>
-        </form>
-
       {groupOptions.length > 0 && (
         <Popover
           renderTrigger={({ ref, onClick, open }) => (
