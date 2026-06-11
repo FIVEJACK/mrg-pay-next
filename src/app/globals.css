@@ -24,7 +24,11 @@
   --color-surface: #ffffff;
   --color-surface-secondary: #f1f1f1;
   --color-surface-focus: #e8f2ff;
+  --color-surface-inverse: #1b1b1b;
   --color-bg-subtle: #f2f2f2;
+
+  --color-text-inverse: #e2e2e2;
+  --color-text-link-inverse: #83abf7;
 
   --radius-sm: 4px;
   --radius-md: 8px;

@@ -6,6 +6,7 @@ import { BuyerInfoCard } from "@/components/checkout/buyer-info-card";
 import { OrderSummaryCard } from "@/components/checkout/order-summary-card";
 import { PaymentDetailSidebar } from "@/components/checkout/payment-detail-sidebar";
 import { PaymentMethodList } from "@/components/checkout/payment-method-list";
+import { Snackbar } from "@/components/shared/snackbar";
 
 export type { CheckoutViewProps };
 
@@ -36,9 +37,13 @@ export function CheckoutDesktop(props: CheckoutViewProps) {
     subtotal,
     selectedFee,
     total,
+    baseUnitPrice,
+    baseSubtotal,
+    wholesaleDiscount,
     wholesaleTier,
     submitting,
     submitError,
+    dismissSubmitError,
     handleSubmit,
     productSubtitle,
   } = useCheckout(props);
@@ -58,6 +63,7 @@ export function CheckoutDesktop(props: CheckoutViewProps) {
           productSubtitle={productSubtitle}
           productImageUrl={productImageUrl}
           unitPrice={unitPrice}
+          basePrice={baseUnitPrice}
           wholesale={wholesaleTier != null}
           quantity={quantity}
           maxQuantity={stock}
@@ -80,15 +86,17 @@ export function CheckoutDesktop(props: CheckoutViewProps) {
       </div>
 
       <PaymentDetailSidebar
-        subtotal={subtotal}
+        subtotal={baseSubtotal}
         adminFee={selectedFee}
+        discount={wholesaleDiscount}
         total={total}
         ctaLabel="Lanjut ke Pembayaran"
         ctaDisabled={paymentLoading || effectivePaymentId == null}
         submitting={submitting}
-        errorMessage={submitError}
         onSubmit={handleSubmit}
       />
+
+      <Snackbar message={submitError} onClose={dismissSubmitError} />
     </div>
   );
 }

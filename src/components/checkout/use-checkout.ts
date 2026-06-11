@@ -148,6 +148,13 @@ export function useCheckout({
   const total = subtotal + selectedFee;
   const stock = typeof product.stock === "number" && product.stock > 0 ? product.stock : undefined;
 
+  // The sidebar shows the pre-discount order total and breaks out the wholesale
+  // saving on its own "Potongan Grosir" line, so we expose the base figures
+  // alongside the already-discounted `unitPrice`/`subtotal`.
+  const baseUnitPrice = Number(product.price) || 0;
+  const baseSubtotal = baseUnitPrice * quantity;
+  const wholesaleDiscount = Math.max(0, baseSubtotal - subtotal);
+
   function setRequiredInfoValue(name: string, value: string) {
     setRequiredInfoValues((prev) => ({ ...prev, [name]: value }));
   }
@@ -187,7 +194,10 @@ export function useCheckout({
 
   async function handleSubmit() {
     setSubmitError(null);
-    if (!validate()) return;
+    if (!validate()) {
+      setSubmitError("Periksa kembali dan lengkapi data-data yang dibutuhkan.");
+      return;
+    }
     if (effectivePaymentId == null) {
       setSubmitError("Pilih metode pembayaran terlebih dahulu.");
       return;
@@ -269,18 +279,23 @@ export function useCheckout({
     paymentLoading,
     paymentError,
     effectivePaymentId,
+    effectiveMethodName: effectiveMethod?.name ?? null,
     setSelectedPaymentId,
     // money
     unitPrice,
     subtotal,
     selectedFee,
     total,
+    baseUnitPrice,
+    baseSubtotal,
+    wholesaleDiscount,
     // wholesale (grosir)
     wholesaleEnabled,
     wholesaleTier,
     // submit
     submitting,
     submitError,
+    dismissSubmitError: () => setSubmitError(null),
     handleSubmit,
     // misc
     productSubtitle,

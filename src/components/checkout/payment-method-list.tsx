@@ -36,7 +36,7 @@ export function PaymentMethodList({
   selectedId,
   onSelect,
   amount,
-  initialVisibleCount = 3,
+  initialVisibleCount = 9,
   bare = false,
 }: PaymentMethodListProps) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -53,7 +53,7 @@ export function PaymentMethodList({
     return (
       <section className={sectionClass}>
         <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
-          Metode Pembayaran
+          Metode pembayaran
         </h2>
         <div className={cardWrapperClass}>
           <div className={gridClass}>
@@ -73,7 +73,7 @@ export function PaymentMethodList({
     return (
       <section className={sectionClass}>
         <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
-          Metode Pembayaran
+          Metode pembayaran
         </h2>
         <div
           className={`text-sm text-(--color-promotion) ${
@@ -100,18 +100,29 @@ export function PaymentMethodList({
 
   return (
     <section className={sectionClass}>
-      <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
-        Metode Pembayaran
-      </h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
+          Metode pembayaran
+        </h2>
+        {bare && hidden.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="shrink-0 font-[family-name:var(--font-heading)] text-sm font-bold text-(--color-brand)"
+          >
+            Lihat Semua
+          </button>
+        )}
+      </div>
       <div className={cardWrapperClass}>
-        <div role="radiogroup" aria-label="Metode Pembayaran" className={gridClass}>
+        <div role="radiogroup" aria-label="Metode pembayaran" className={gridClass}>
           {visible.map((m) => {
             const violation = checkPaymentMethodLimit(m, amount);
             return (
               <PaymentCard
                 key={m.id}
                 method={m}
-                fee={calculatePaymentFee(m, amount)}
+                price={amount + calculatePaymentFee(m, amount)}
                 selected={m.id === selectedId}
                 violation={violation}
                 showRadio={bare}
@@ -156,14 +167,15 @@ export function PaymentMethodList({
 
 function PaymentCard({
   method,
-  fee,
+  price,
   selected,
   violation,
   showRadio = false,
   onSelect,
 }: {
   method: PaymentMethod;
-  fee: number;
+  /** Final price for this method: order amount + admin fee. */
+  price: number;
   selected: boolean;
   violation: PaymentLimitViolation | null;
   showRadio?: boolean;
@@ -208,7 +220,7 @@ function PaymentCard({
             disabled ? "text-(--color-text-disabled)" : "text-(--color-text-secondary)"
           }`}
         >
-          {fee > 0 ? formatPriceIDR(fee) : "Gratis"}
+          {formatPriceIDR(price)}
         </span>
         {showRadio && (
           <span

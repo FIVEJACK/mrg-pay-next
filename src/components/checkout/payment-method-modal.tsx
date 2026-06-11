@@ -200,7 +200,7 @@ export function PaymentMethodModal({
                     <ModalPaymentCard
                       key={m.id}
                       method={m}
-                      fee={calculatePaymentFee(m, amount)}
+                      price={amount + calculatePaymentFee(m, amount)}
                       selected={m.id === draftId}
                       violation={violation}
                       onSelect={() => setDraftId(m.id)}
@@ -219,7 +219,7 @@ export function PaymentMethodModal({
               <p className="truncate font-[family-name:var(--font-heading)] text-base font-bold leading-6 text-(--color-text-title)">
                 {draftMethod.name}{" "}
                 <span className="font-normal text-(--color-text-subdued)">
-                  ({formatPriceIDR(calculatePaymentFee(draftMethod, amount))})
+                  ({formatPriceIDR(amount + calculatePaymentFee(draftMethod, amount))})
                 </span>
               </p>
             ) : (
@@ -243,13 +243,14 @@ export function PaymentMethodModal({
 
 function ModalPaymentCard({
   method,
-  fee,
+  price,
   selected,
   violation,
   onSelect,
 }: {
   method: PaymentMethod;
-  fee: number;
+  /** Final price for this method: order amount + admin fee. */
+  price: number;
   selected: boolean;
   violation: PaymentLimitViolation | null;
   onSelect: () => void;
@@ -309,7 +310,7 @@ function ModalPaymentCard({
           disabled ? "text-(--color-text-disabled)" : "text-(--color-text-body)"
         }`}
       >
-        {fee > 0 ? formatPriceIDR(fee) : "Gratis"}
+        {formatPriceIDR(price)}
       </span>
     </button>
   );
