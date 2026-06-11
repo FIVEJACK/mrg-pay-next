@@ -44,6 +44,7 @@ phases:
           --build-arg NEXT_PUBLIC_PUBNUB_SUB_KEY \
           --build-arg PARTNER_API_BASE_URL \
           --build-arg B2B2C_HASH_CODE \
+          --build-arg NEXT_PUBLIC_AMPLITUDE_API_KEY \
           --tag $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:${IMAGE_TAG}-${CURRDATE}-$CODEBUILD_RESOLVED_SOURCE_VERSION \
           --tag $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG \
           .

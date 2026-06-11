@@ -34,6 +34,10 @@ ENV NEXT_PUBLIC_PUBNUB_PUB_KEY=$NEXT_PUBLIC_PUBNUB_PUB_KEY
 ARG NEXT_PUBLIC_PUBNUB_SUB_KEY
 ENV NEXT_PUBLIC_PUBNUB_SUB_KEY=$NEXT_PUBLIC_PUBNUB_SUB_KEY
 
+# Amplitude API key
+ARG NEXT_PUBLIC_AMPLITUDE_API_KEY
+ENV NEXT_PUBLIC_AMPLITUDE_API_KEY=$NEXT_PUBLIC_AMPLITUDE_API_KEY
+
 RUN yarn global add node-gyp
 RUN --mount=type=cache,target=/root/.yarn-cache YARN_CACHE_FOLDER=/root/.yarn-cache yarn install --frozen-lockfile --production
 RUN find . -name "*.map" -type f -delete

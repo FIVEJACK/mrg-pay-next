@@ -9,8 +9,7 @@ import { TransactionStatusCard } from "@/components/invoice/transaction-status-c
 
 import { ChatSection } from "./chat-section";
 export function InvoiceMobile(props: InvoiceViewProps) {
-  const { transaction, userIdLabel, loading, error, state, order, buyerId } =
-    useInvoice(props);
+  const { transaction, loading, error, state, order, buyerId } = useInvoice(props);
 
   if (loading) return <LoadingShell />;
   if (error || !transaction || !state) {
@@ -32,7 +31,7 @@ export function InvoiceMobile(props: InvoiceViewProps) {
         />
       )}
 
-      <OrderDetailCard bare transaction={transaction} userIdLabel={userIdLabel} />
+      <OrderDetailCard bare transaction={transaction} />
       <PaymentDetailCard bare transaction={transaction} />
       <SupportCard bare />
     </div>

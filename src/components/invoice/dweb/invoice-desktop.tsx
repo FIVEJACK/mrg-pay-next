@@ -11,8 +11,7 @@ import { TransactionStatusCard } from "@/components/invoice/transaction-status-c
 export type { InvoiceViewProps };
 
 export function InvoiceDesktop(props: InvoiceViewProps) {
-  const { transaction, userIdLabel, loading, error, state, order, buyerId } =
-    useInvoice(props);
+  const { transaction, loading, error, state, order, buyerId } = useInvoice(props);
 
   if (loading) return <LoadingShell />;
   if (error || !transaction || !state) {
@@ -35,7 +34,7 @@ export function InvoiceDesktop(props: InvoiceViewProps) {
         </div>
 
         <aside className="flex flex-col gap-6 self-start">
-          <OrderDetailCard transaction={transaction} userIdLabel={userIdLabel} />
+          <OrderDetailCard transaction={transaction} />
           <PaymentDetailCard transaction={transaction} />
           <SupportCard />
         </aside>

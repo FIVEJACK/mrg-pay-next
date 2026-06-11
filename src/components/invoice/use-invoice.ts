@@ -14,9 +14,9 @@ export type InvoiceViewProps = {
 
 export function useInvoice({ transactionUuid }: InvoiceViewProps) {
   const [transaction, setTransaction] = useState<TransactionDetail | null>(null);
-  const [userIdLabel, setUserIdLabel] = useState("User ID");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userIdLabel, setUserIdLabel] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -84,7 +84,7 @@ export function useInvoice({ transactionUuid }: InvoiceViewProps) {
     ? String(transaction.buyer_id ?? `buyer-${transaction.id}`)
     : "";
 
-  return { transaction, userIdLabel, loading, error, state, order, buyerId };
+  return { transaction, loading, error, state, order, buyerId, userIdLabel };
 }
 
 function deriveState(tx: TransactionDetail): InvoiceState {
@@ -98,3 +98,4 @@ function deriveState(tx: TransactionDetail): InvoiceState {
   }
   return "pending";
 }
+
