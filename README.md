@@ -34,7 +34,7 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 - [ ] Add route translation to i18n config ([Guide](#add-route-translation))
 - [ ] Page must not include `'use client'`. If needed, make a wrapper and make the component use client and not the page ([Guide](#how-to-use-server-component-or-client-component))
 - [ ] Use i18n translation feature to translate text ([Guide](#use-next-intl-to-translate-text))
-- [ ] (Optional) Add Amplitude page tracker ([Guide](#add-amplitude-page-tracker))
+- [ ] (Optional) Add Amplitude page tracker ([Guide](#amplitude-analytics))
 - [ ] (Optional) Add custom page header ([Guide](#add-custom-page-header))
 
 ## Optimizing Page Checklist
@@ -138,22 +138,74 @@ const t = await getTranslations();
 t('lupa_password')
 ```
 
-### Add Amplitude Page Tracker
-If you need a tracker on page visit, you can add the component:
+### Amplitude Analytics
 
-1. **Import the component:**
-```typescript
-import VisitPageTracker from 'components/features/amplitude/visit-page-tracker';
+Amplitude is initialized once for the whole app in `src/instrumentation-client.ts`
+(Next.js runs this before hydration). It is a no-op unless the API key is set, so
+local development without a key sends nothing.
+
+Set the key via env (exposed to the browser, so it must be `NEXT_PUBLIC_`):
+
+```bash
+NEXT_PUBLIC_AMPLITUDE_API_KEY=your-amplitude-api-key
 ```
 
-2. **Place the component inside the page:**
+`autocapture` is fully disabled (pageViews, webVitals, elementInteractions, pageUrlEnrichment).
+All tracking is explicit — nothing is sent unless you call `trackEvent` or use `VisitPageTracker`.
+
+#### Track a custom event
+
+1. **Register the event name** in the registry at `src/lib/amplitude.ts`:
+```typescript
+export const EVENT = {
+  // ...
+  MY_NEW_EVENT: "My New Event",
+} as const;
+```
+
+2. **Fire it** from any client component or hook:
+```typescript
+import { EVENT, trackEvent } from "@/lib/amplitude";
+
+trackEvent(EVENT.MY_NEW_EVENT, { foo: "bar" });
+```
+
+`trackEvent` is safe to call anywhere — it no-ops on the server and when no key
+is configured, and never throws into the UI flow.
+
+#### Add a page-visit tracker
+
+For a "page viewed" event, drop `VisitPageTracker` into the page (works in
+Server Components — it's a thin client component that renders nothing):
+
 ```tsx
-<VisitPageTracker eventName={EVENT.VISIT_GAME_KEY_MICROSITE_PAGE} />
+import { VisitPageTracker } from "@/components/shared/visit-page-tracker";
+import { EVENT } from "@/lib/amplitude";
+
+<VisitPageTracker eventName={EVENT.VISIT_CHECKOUT_PAGE} properties={{ product_id }} />
 ```
 
-3. **If it's a new event, make sure to register the event name first at:**
+#### Flush before navigation
+
+If you redirect immediately after tracking (e.g. post-checkout), await `flushAmplitude()`
+so queued events aren't dropped when the page unloads:
+
 ```typescript
-import { EVENT } from 'helpers/amplitude-helper';
+import { flushAmplitude } from "@/lib/amplitude";
+
+await flushAmplitude();
+router.push("/success");
+```
+
+#### Identify a user
+
+After resolving a user identity (e.g. login), call `identifyUser` to associate
+subsequent events with that user:
+
+```typescript
+import { identifyUser } from "@/lib/amplitude";
+
+identifyUser(user.email);
 ```
 
 ### Add Custom Page Header

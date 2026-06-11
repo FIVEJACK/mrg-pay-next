@@ -20,9 +20,9 @@ export type ProductSelectedPayload = {
   itemInfoName: string | null;
   serverName: string | null;
   itemTypeId: number | null;
+  itemCategoryId: number | null;
   gameId: number | null;
   hashCode: string;
-  /** Full product object — used by the mobile ProductDetailSheet to render without a re-fetch. */
   product: Product;
 };
 
@@ -87,6 +87,7 @@ export function postProductSelection(
       itemInfoName: itemInfo?.name ?? itemInfo?.slug ?? null,
       serverName: product.server_name ?? null,
       itemTypeId: product.item_type_id ?? fallbackItemTypeId,
+      itemCategoryId: product.item_category_id ?? null,
       gameId: product.game_id ?? null,
       hashCode,
       product,

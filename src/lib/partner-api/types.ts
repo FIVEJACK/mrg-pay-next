@@ -100,6 +100,7 @@ export type Product = {
   seller_currency?: string;
   game?: { id: number; name: string; slug?: string };
   game_id?: number;
+  item_category_id?: number;
   item_type?: { name: string; slug?: string };
   item_type_id?: number;
   item_info?: { id: number; slug?: string | null };

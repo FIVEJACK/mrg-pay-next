@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { IMAGE_HOSTS } from "./src/lib/image-hosts";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -24,6 +25,7 @@ const cspDirectives: Record<string, Array<string | false>> = {
     "https://*.pndsn.com",
     "wss://*.pubnub.com",
     "wss://*.pndsn.com",
+    "https://*.amplitude.com",
     pubnubFileHost,
     isDev && "ws:",
   ],
@@ -36,8 +38,19 @@ const csp = Object.entries(cspDirectives)
   .map(([directive, sources]) => `${directive} ${sources.filter(Boolean).join(" ")}`)
   .join("; ");
 
+const imagePatterns = [...IMAGE_HOSTS, "**.pndsn.com"].map((hostname) => ({
+  protocol: "https" as const,
+  hostname,
+}));
+
 const nextConfig: NextConfig = {
   assetPrefix: staticCDNPath,
+  images: {
+    path: process.env.IMAGE_LOADER || undefined,
+    remotePatterns: imagePatterns,
+    deviceSizes: [240, 320, 360, 375, 390, 414, 428, 600, 800, 1000, 1033],
+    imageSizes: [24, 32, 48, 64, 96, 140, 148],
+  },
   async headers() {
     return [
       {

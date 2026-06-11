@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { MrgImage } from "@/components/shared/mrg-image";
 
 import { computeDiscountPct, formatPriceIDR, formatSoldCount } from "@/lib/format";
 import type { Product } from "@/lib/partner-api";
@@ -31,13 +31,12 @@ export function ProductCard({ product, selected, mobile, onClick }: ProductCardP
     >
       <div className="relative aspect-[210/118] w-full overflow-hidden bg-(--color-surface-secondary)">
         {cover ? (
-          <Image
+          <MrgImage
             src={cover}
             alt={product.name}
             fill
             sizes="(min-width: 1280px) 220px, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
             className="object-cover"
-            unoptimized
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs text-(--color-text-subdued)">

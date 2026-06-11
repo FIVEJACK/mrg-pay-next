@@ -2,6 +2,8 @@ import { Breadcrumb } from "@/components/pdp/breadcrumb";
 import { GameHeader } from "@/components/pdp/game-header";
 import { HeroBackground } from "@/components/pdp/hero-background";
 import { ProductListClient } from "@/components/pdp/product-list-client";
+import { VisitPageTracker } from "@/components/shared/visit-page-tracker";
+import { CLIENT_NAME, EVENT } from "@/lib/amplitude";
 import { isMobile } from "@/lib/device.server";
 import { tryDecodeB2b2cHash } from "@/lib/partner-api/b2b2c-hash";
 import {
@@ -74,8 +76,19 @@ export default async function ProductIframePage({ searchParams }: PageProps) {
     sort: (sp.sort as ProductListQuery["sort"]) ?? "popular",
   };
 
-  return (
+  const itemTypeName = itemTypes.find((t) => t.id === initialItemTypeId)?.name ?? null;
+
+    return (
     <div className="relative">
+      <VisitPageTracker
+        eventName={EVENT.VISIT_PRODUCT_CATALOGUE}
+        properties={{
+          "Client Name": CLIENT_NAME,
+          Game: gameName,
+          "Item Type": itemTypeName,
+          "Device Env": mobile ? "Mobile" : "Desktop",
+        }}
+      />
       <HeroBackground />
 
       <div className="mx-auto w-full max-w-[1440px] px-6 py-10 lg:px-[116px]">
@@ -96,6 +109,8 @@ export default async function ProductIframePage({ searchParams }: PageProps) {
           hasServer={gameInfo?.has_server === 1}
           filters={filters}
           mobile={mobile}
+          gameName={gameName}
+          country={scope.country_code}
         />
       </div>
     </div>

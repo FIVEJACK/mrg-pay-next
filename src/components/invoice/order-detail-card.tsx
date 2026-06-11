@@ -1,3 +1,5 @@
+import { MrgImage } from "@/components/shared/mrg-image";
+
 import type { TransactionDetail } from "@/lib/partner-api";
 
 type OrderDetailCardProps = {
@@ -26,12 +28,12 @@ export function OrderDetailCard({ transaction, bare }: OrderDetailCardProps) {
       <div className="flex items-start gap-3">
         <div className="size-12 shrink-0 overflow-hidden rounded-lg border border-(--color-border) bg-(--color-bg-subtle)">
           {order.product_image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <MrgImage
               src={order.product_image}
               alt=""
+              width={48}
+              height={48}
               className="size-full object-cover"
-              loading="lazy"
             />
           ) : null}
         </div>

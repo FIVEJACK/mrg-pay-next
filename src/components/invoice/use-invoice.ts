@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { CLIENT_NAME, EVENT, trackEvent } from "@/lib/amplitude";
 import { partnerBrowserApi, PartnerApiError } from "@/lib/partner-api/browser-client";
 import type { TransactionDetail } from "@/lib/partner-api";
 
@@ -15,6 +16,7 @@ export function useInvoice({ transactionUuid }: InvoiceViewProps) {
   const [transaction, setTransaction] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userIdLabel, setUserIdLabel] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -31,6 +33,32 @@ export function useInvoice({ transactionUuid }: InvoiceViewProps) {
         });
         if (cancelled) return;
         setTransaction(detail);
+        const order = detail.orders[0];
+        trackEvent(EVENT.VISIT_ORDER_DETAIL_PAGE, {
+          "Client Name": CLIENT_NAME,
+          Game: order?.game_name ?? null,
+          "Item Type Name": order?.item_type_name ?? null,
+          "Device Env": window.innerWidth < 768 ? "Mobile" : "Desktop",
+          "Product ID": order?.product_id ?? null,
+          "Product Name": order?.product_name ?? null,
+          Country: detail.buyer_country ?? null,
+          "Transaction Number": detail.transaction_number ?? null,
+          "Order Number": order?.order_number ?? null,
+        });
+
+        const gameId = detail.orders?.[0]?.game_id;
+        if (gameId) {
+          partnerBrowserApi
+            .getGameInfo(gameId, { signal: controller.signal })
+            .then((info) => {
+              if (cancelled) return;
+              const label = info?.game?.nickname?.trim();
+              if (label) setUserIdLabel(label);
+            })
+            .catch(() => {
+              /* ignore — keep default label */
+            });
+        }
       } catch (err: unknown) {
         if ((err as { name?: string })?.name === "AbortError") return;
         if (cancelled) return;
@@ -56,7 +84,7 @@ export function useInvoice({ transactionUuid }: InvoiceViewProps) {
     ? String(transaction.buyer_id ?? `buyer-${transaction.id}`)
     : "";
 
-  return { transaction, loading, error, state, order, buyerId };
+  return { transaction, loading, error, state, order, buyerId, userIdLabel };
 }
 
 function deriveState(tx: TransactionDetail): InvoiceState {
@@ -70,3 +98,4 @@ function deriveState(tx: TransactionDetail): InvoiceState {
   }
   return "pending";
 }
+
