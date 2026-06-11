@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { InfoIcon } from "@/components/icon";
+
 type BuyerInfoCardProps = {
   email: string;
   onEmailChange: (value: string) => void;
@@ -31,7 +33,7 @@ export function BuyerInfoCard({
       className={`flex w-full flex-col gap-3 ${bare ? "bg-white px-4 py-5" : ""}`}
     >
       <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
-        Informasi Pembeli
+        Informasi pembeli
       </h2>
       <div
         className={
@@ -55,7 +57,11 @@ export function BuyerInfoCard({
               onBlur={() => setTimeout(() => setFocused(false), 120)}
               placeholder="Masukkan alamat email"
               aria-invalid={error ? true : undefined}
-              className="h-11 w-full rounded-2xl border border-(--color-border) bg-(--color-surface) px-3 text-base leading-6 text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none focus:border-(--color-brand)"
+              className={`h-11 w-full rounded-2xl border bg-(--color-surface) px-3 text-base leading-6 text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none ${
+                error
+                  ? "border-(--color-promotion)"
+                  : "border-(--color-border) focus:border-(--color-brand)"
+              }`}
             />
             {showSuggestions && (
               <div className="absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.15)]">
@@ -86,13 +92,15 @@ export function BuyerInfoCard({
             )}
           </div>
           {error && (
-            <span role="alert" className="text-xs leading-4 text-(--color-promotion)">
+            <span role="alert" className="flex items-center gap-1 text-xs leading-4 text-(--color-promotion)">
+              <InfoIcon className="size-4 shrink-0" />
               {error}
             </span>
           )}
         </label>
         <p className="flex-1 self-center font-[family-name:var(--font-heading)] text-sm leading-5 text-(--color-text-subdued) lg:pt-6">
-          Kami akan menghubungimu lewat email ini jika terdapat kendala pada transaksimu.
+          Hanya untuk kirim status transaksi.{" "}
+          <span className="text-(--color-brand)">Lihat Kebijakan Privasi</span>
         </p>
       </div>
     </section>

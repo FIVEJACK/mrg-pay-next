@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { formatPriceIDR } from "@/lib/format";
 import type { RequiredInfoField } from "@/lib/partner-api";
 
-import { ChevronDownIcon, MinusIcon, PlusIcon } from "@/components/icon";
+import { ChevronDownIcon, InfoIcon, MinusIcon, PlusIcon } from "@/components/icon";
 import { Popover } from "@/components/pdp/popover";
 import { SortPopover } from "@/components/pdp/sort-popover";
 
@@ -14,6 +14,8 @@ type OrderSummaryCardProps = {
   productSubtitle?: string | null;
   productImageUrl?: string | null;
   unitPrice: number;
+  /** Pre-discount unit price shown inline in the desktop product subtitle. Defaults to `unitPrice`. */
+  basePrice?: number;
   quantity: number;
   maxQuantity?: number;
   onQuantityChange: (next: number) => void;
@@ -31,6 +33,7 @@ export function OrderSummaryCard({
   productSubtitle,
   productImageUrl,
   unitPrice,
+  basePrice,
   quantity,
   maxQuantity,
   onQuantityChange,
@@ -47,18 +50,18 @@ export function OrderSummaryCard({
 
   const productInfo = (
     <div className="flex min-w-0 flex-1 items-start gap-3">
-      <div className="size-12 shrink-0 overflow-hidden rounded-lg border border-(--color-border) bg-(--color-bg-subtle)">
+      <div className="size-10 shrink-0 overflow-hidden rounded-lg border border-(--color-border) bg-(--color-bg-subtle)">
         {productImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={productImageUrl} alt="" className="size-full object-cover" loading="lazy" />
         ) : null}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <p className="font-[family-name:var(--font-heading)] truncate text-base font-bold leading-6 text-(--color-text-title)">
+        <p className="font-[family-name:var(--font-heading)] truncate text-sm font-bold leading-5 text-(--color-text-title)">
           {productName}
         </p>
         {productSubtitle && (
-          <p className="font-[family-name:var(--font-heading)] truncate text-sm leading-5 text-(--color-text-subdued)">
+          <p className="font-[family-name:var(--font-heading)] truncate text-xs leading-4 text-(--color-text-subdued)">
             {productSubtitle}
           </p>
         )}
@@ -66,16 +69,27 @@ export function OrderSummaryCard({
     </div>
   );
 
+  // Mobile product price: discounted price with a "Grosir" badge and the
+  // struck-through original when a wholesale tier is active, otherwise just the
+  // price.
+  const wholesaleActive = wholesale && basePrice != null && basePrice > unitPrice;
   const price = (
-    <div className="flex flex-col items-end gap-1">
-      {wholesale && (
-        <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-bold leading-none text-emerald-600">
-          Grosir
+    <div className="flex shrink-0 flex-col items-end gap-1">
+      <div className="flex items-center gap-1">
+        <span className="font-[family-name:var(--font-heading)] whitespace-nowrap text-right text-sm font-bold leading-5 text-(--color-text-title)">
+          {formatPriceIDR(unitPrice)}
+        </span>
+        {wholesaleActive && (
+          <span className="rounded bg-[#fdeded] px-1 py-0.5 text-[11px] leading-[14px] text-(--color-promotion)">
+            Grosir
+          </span>
+        )}
+      </div>
+      {wholesaleActive && (
+        <span className="whitespace-nowrap text-xs leading-4 text-(--color-text-subdued) line-through">
+          {formatPriceIDR(basePrice)}
         </span>
       )}
-      <p className="font-[family-name:var(--font-heading)] whitespace-nowrap text-right text-base font-bold leading-6 text-(--color-text-title)">
-        {formatPriceIDR(unitPrice)}
-      </p>
     </div>
   );
 
@@ -119,11 +133,47 @@ export function OrderSummaryCard({
     </div>
   );
 
+  // Desktop product header: the unit price lives inline in the subtitle
+  // (e.g. "Fish It! • Rp20.000") instead of a separate right-aligned block.
+  const productInfoWithPrice = (
+    <div className="flex min-w-0 flex-1 items-start gap-3">
+      <div className="size-12 shrink-0 overflow-hidden rounded-lg border border-(--color-border) bg-(--color-bg-subtle)">
+        {productImageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={productImageUrl} alt="" className="size-full object-cover" loading="lazy" />
+        ) : null}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <p className="font-[family-name:var(--font-heading)] truncate text-base font-bold leading-6 text-(--color-text-title)">
+          {productName}
+        </p>
+        <div className="flex min-w-0 items-center gap-2 font-[family-name:var(--font-heading)] text-sm leading-5 text-(--color-text-subdued)">
+          {productSubtitle && <span className="truncate">{productSubtitle}</span>}
+          {productSubtitle && (
+            <span className="size-1 shrink-0 rounded-full bg-(--color-text-subdued)" />
+          )}
+          <span className="shrink-0 whitespace-nowrap">{formatPriceIDR(basePrice ?? unitPrice)}</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const stockLabel = maxQuantity !== undefined && (
+    <div className="flex shrink-0 items-center gap-1 whitespace-nowrap font-[family-name:var(--font-heading)] text-base leading-5">
+      <span className="text-(--color-text-subdued)">Stok:</span>
+      <span className="font-bold text-(--color-text-secondary)">{maxQuantity}</span>
+    </div>
+  );
+
+  const showDivider = requiredInfoLoading || requiredInfoFields.length > 0;
+
   const requiredInfo = requiredInfoLoading ? (
     <div className="h-11 w-full max-w-[410px] animate-pulse rounded-2xl bg-(--color-bg-subtle)" />
   ) : (
     requiredInfoFields.length > 0 && (
-      <div className="flex flex-col gap-4">
+      // Desktop lays the fields out two-per-row (matching the design's Order
+      // Info grid); mobile keeps them stacked in a single column.
+      <div className={bare ? "flex flex-col gap-4" : "grid grid-cols-2 gap-4"}>
         {requiredInfoFields.map((field) => (
           <RequiredInfoInput
             key={field.id}
@@ -142,7 +192,7 @@ export function OrderSummaryCard({
       className={`flex w-full flex-col gap-3 ${bare ? "bg-white px-4 py-5" : ""}`}
     >
       <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold leading-[26px] text-(--color-text-title)">
-        Pesanan Kamu
+        Pesanan kamu
       </h2>
       <div
         className={
@@ -152,24 +202,28 @@ export function OrderSummaryCard({
         }
       >
         {bare ? (
-          // Mobile design order: product → buyer field(s) → price + stepper row.
+          // Mobile design order: product + price → buyer field(s) → stock + stepper.
           <>
-            {productInfo}
-            {requiredInfo}
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-start justify-between gap-4">
+              {productInfo}
               {price}
-              {stepper}
+            </div>
+            {requiredInfo}
+            <div className="flex items-center gap-4">
+              {stockLabel}
+              <div className="ml-auto">{stepper}</div>
             </div>
           </>
         ) : (
           <>
             <div className="flex items-center gap-6">
-              {productInfo}
+              {productInfoWithPrice}
               <div className="flex items-center gap-4">
-                {price}
+                {stockLabel}
                 {stepper}
               </div>
             </div>
+            {showDivider && <div className="h-px w-full bg-(--color-border)" />}
             {requiredInfo}
           </>
         )}
@@ -195,7 +249,7 @@ function RequiredInfoInput({
   const isDropdown = field.is_dropdown === 1 && dropdownOptions.length > 0;
 
   return (
-    <label className="flex max-w-[410px] flex-col gap-1">
+    <label className="flex min-w-0 flex-col gap-1">
       <span className="font-[family-name:var(--font-heading)] text-sm leading-5 text-(--color-text-secondary)">
         {field.name}
       </span>
@@ -208,8 +262,12 @@ function RequiredInfoInput({
               onClick={onClick}
               aria-haspopup="dialog"
               aria-expanded={open}
-              className={`flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-2xl border bg-(--color-surface) px-3 text-base leading-6 outline-none transition-colors duration-150 ease-out hover:border-(--color-brand) ${
-                open ? "border-(--color-brand)" : "border-(--color-border)"
+              className={`flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-2xl border bg-(--color-surface) px-3 text-base leading-6 outline-none transition-colors duration-150 ease-out ${
+                error
+                  ? "border-(--color-promotion)"
+                  : open
+                    ? "border-(--color-brand)"
+                    : "border-(--color-border) hover:border-(--color-brand)"
               } ${value ? "text-(--color-text-body)" : "text-(--color-text-subdued)"}`}
             >
               <span className="truncate">
@@ -239,11 +297,16 @@ function RequiredInfoInput({
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
           aria-invalid={error ? true : undefined}
-          className="h-11 w-full rounded-2xl border border-(--color-border) bg-(--color-surface) px-3 text-base leading-6 text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none focus:border-(--color-brand)"
+          className={`h-11 w-full rounded-2xl border bg-(--color-surface) px-3 text-base leading-6 text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none ${
+            error
+              ? "border-(--color-promotion)"
+              : "border-(--color-border) focus:border-(--color-brand)"
+          }`}
         />
       )}
       {error && (
-        <span role="alert" className="text-xs leading-4 text-(--color-promotion)">
+        <span role="alert" className="flex items-center gap-1 text-xs leading-4 text-(--color-promotion)">
+          <InfoIcon className="size-4 shrink-0" />
           {error}
         </span>
       )}

@@ -5,9 +5,9 @@ import { useCheckout, type CheckoutViewProps } from "@/components/checkout/use-c
 import { BuyerInfoCard } from "@/components/checkout/buyer-info-card";
 import { OrderSummaryCard } from "@/components/checkout/order-summary-card";
 import { PaymentMethodList } from "@/components/checkout/payment-method-list";
+import { Snackbar } from "@/components/shared/snackbar";
 
 import { CheckoutBottomBar } from "./checkout-bottom-bar";
-import { PaymentBreakdownCard } from "./payment-breakdown-card";
 
 
 export function CheckoutMobile(props: CheckoutViewProps) {
@@ -29,14 +29,17 @@ export function CheckoutMobile(props: CheckoutViewProps) {
     paymentLoading,
     paymentError,
     effectivePaymentId,
+    effectiveMethodName,
     setSelectedPaymentId,
     unitPrice,
+    baseUnitPrice,
     subtotal,
     selectedFee,
     total,
     wholesaleTier,
     submitting,
     submitError,
+    dismissSubmitError,
     handleSubmit,
     productSubtitle,
   } = useCheckout(props);
@@ -58,6 +61,7 @@ export function CheckoutMobile(props: CheckoutViewProps) {
           productSubtitle={productSubtitle}
           productImageUrl={productImageUrl}
           unitPrice={unitPrice}
+          basePrice={baseUnitPrice}
           wholesale={wholesaleTier != null}
           quantity={quantity}
           maxQuantity={stock}
@@ -79,17 +83,25 @@ export function CheckoutMobile(props: CheckoutViewProps) {
           amount={subtotal}
         />
 
-        <PaymentBreakdownCard subtotal={subtotal} adminFee={selectedFee} total={total} />
+        <p className="px-4 py-4 text-center font-[family-name:var(--font-heading)] text-xs leading-4 text-(--color-text-subdued)">
+          Dengan melanjutkan, saya setuju dengan{" "}
+          <span className="text-(--color-brand)">Syarat &amp; Ketentuan</span> yang berlaku di
+          Lapakgaming.
+        </p>
       </div>
 
       <CheckoutBottomBar
         total={total}
+        subtotal={subtotal}
+        adminFee={selectedFee}
+        methodName={effectiveMethodName}
         ctaLabel="Bayar"
         ctaDisabled={paymentLoading || effectivePaymentId == null}
         submitting={submitting}
-        errorMessage={submitError}
         onSubmit={handleSubmit}
       />
+
+      <Snackbar message={submitError} onClose={dismissSubmitError} className="bottom-28" />
     </>
   );
 }
