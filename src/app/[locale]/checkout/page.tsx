@@ -11,7 +11,6 @@ import {
   PartnerApiError,
   pickProductCoverImage,
 } from "@/lib/partner-api";
-import type { Product } from "@/lib/partner-api";
 
 export const dynamic = "force-dynamic";
 
@@ -38,14 +37,9 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
     );
   }
 
-  const listing = await safeCall(() =>
-    partnerApi.getProducts(
-      { id: productId, per_page: 1 },
-      { hashCode },
-    ),
+  const product = await safeCall(() =>
+    partnerApi.getProductDetail(productId, { hashCode }),
   );
-  const product: Product | undefined = listing?.data?.[0];
-  console.log(product);
   if (!product) {
     return (
       <CheckoutShell>

@@ -5,6 +5,7 @@ import type {
   GameInfoData,
   GameInfoDetailData,
   PaymentGroup,
+  Product,
   ProductListData,
   ProductListQuery,
 } from "./types";
@@ -185,7 +186,7 @@ export const partnerApi = {
   },
 
   /**
-   * Requires one of game_id / item_type_id / item_info_group_id / id as an indexed filter.
+   * Requires one of game_id / item_type_id / item_info_group_id as an indexed filter.
    * The validator declares item_type_id as required.
    */
   getProducts(params: ProductListQuery, opts?: { hashCode?: string }) {
@@ -210,5 +211,14 @@ export const partnerApi = {
       "/partner/v1/product/product-attribute-configuration",
       { headers: b2b2cHeaders(hashCode) },
     );
+  },
+
+  /**
+   * Requires id (product_id) as an indexed filter.
+   */
+  getProductDetail(id: number, opts?: { hashCode?: string }) {
+    return request<Product>(`/partner/v1/product/detail/${id}`, {
+        headers: b2b2cHeaders(opts?.hashCode),
+    });
   },
 };

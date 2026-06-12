@@ -184,6 +184,9 @@ export function FilterBarMobile({
               defaultValue={keyword}
               placeholder="Search..."
               className="w-full bg-transparent text-sm text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none"
+              onInput={(e) => {
+                if (!(e.target as HTMLInputElement).value) onChange({ keyword: undefined });
+              }}
             />
           </label>
         </form>
