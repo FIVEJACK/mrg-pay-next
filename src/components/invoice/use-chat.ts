@@ -64,6 +64,11 @@ export function useChat({ orderId, buyerId, sellerId, buyerName, paidAt }: UseCh
     return () => controller.abort();
   }, []);
 
+  const refreshChatToken = useCallback(async () => {
+    const res = await partnerBrowserApi.authenticateChat();
+    return res.token;
+  }, []);
+
   // Seller presence for the chat header pill. Non-fatal: on failure the pill
   // just falls back to ">7 Hari Lalu".
   useEffect(() => {
@@ -71,9 +76,7 @@ export function useChat({ orderId, buyerId, sellerId, buyerName, paidAt }: UseCh
     partnerBrowserApi
       .getSellerInfo(sellerId, { signal: controller.signal })
       .then((info) => setSellerLastActivity(info.last_activity_time ?? null))
-      .catch((err: unknown) => {
-        if ((err as { name?: string })?.name === "AbortError") return;
-      });
+      .catch(() => { });
     return () => controller.abort();
   }, [sellerId]);
 
@@ -92,11 +95,12 @@ export function useChat({ orderId, buyerId, sellerId, buyerName, paidAt }: UseCh
     channel: `non_order_partnership_${orderId}_${buyerId}_${sellerId}`,
     buyerId,
     onMessage: handleIncoming,
+    refreshToken: refreshChatToken,
   });
 
   async function handleSend() {
     const text = draft.trim();
-    if (!text) return;
+    if (!text || sending) return;
     setSendError(null);
     setSending(true);
     setDraft("");
@@ -116,9 +120,10 @@ export function useChat({ orderId, buyerId, sellerId, buyerName, paidAt }: UseCh
     try {
       await publish(html, id);
     } catch (err) {
-      // Roll back the optimistic bubble on failure.
+      // Roll back the optimistic bubble on failure; restore the failed text
+      // unless the user has already typed something new.
       setMessages((prev) => prev.filter((m) => m.id !== id));
-      setDraft(text);
+      setDraft((cur) => cur || text);
       setSendError(err instanceof Error ? err.message : "Tidak dapat mengirim pesan.");
     } finally {
       setSending(false);
@@ -126,7 +131,7 @@ export function useChat({ orderId, buyerId, sellerId, buyerName, paidAt }: UseCh
   }
 
   async function handleSendFile(file: File) {
-    if (!file) return;
+    if (!file || attaching) return;
     setSendError(null);
     if (!file.type.startsWith("image/")) {
       setSendError("Hanya gambar yang dapat dikirim.");

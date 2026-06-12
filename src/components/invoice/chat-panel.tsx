@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
-import { DotsIcon, PaperclipIcon, SendIcon } from "@/components/icon";
+import { DotsIcon, PaperclipIcon, SendIcon, XIcon } from "@/components/icon";
 import { HtmlContent } from "@/components/shared/html-content";
 import { getSellerActivity } from "@/lib/format-activity";
 
@@ -181,17 +182,28 @@ function ChatMessageBody({ message }: { message: ChatMessage }) {
 }
 
 function ChatAttachmentView({ attachment }: { attachment: ChatAttachment }) {
+  const [previewOpen, setPreviewOpen] = useState(false);
   if (attachment.isImage) {
     return (
-      <a href={attachment.url} target="_blank" rel="noopener noreferrer" className="mb-1 block">
-        {/* PubNub file URLs aren't a configured next/image host, so use a plain img. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={attachment.url}
-          alt={attachment.name}
-          className="max-h-60 w-auto max-w-full rounded-lg object-cover"
-        />
-      </a>
+      <>
+        <button
+          type="button"
+          aria-label={`Lihat gambar ${attachment.name}`}
+          onClick={() => setPreviewOpen(true)}
+          className="mb-1 block cursor-zoom-in"
+        >
+          {/* PubNub file URLs aren't a configured next/image host, so use a plain img. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={attachment.url}
+            alt={attachment.name}
+            className="max-h-60 w-auto max-w-full rounded-lg object-cover"
+          />
+        </button>
+        {previewOpen && (
+          <ImageLightbox attachment={attachment} onClose={() => setPreviewOpen(false)} />
+        )}
+      </>
     );
   }
   return (
@@ -204,6 +216,62 @@ function ChatAttachmentView({ attachment }: { attachment: ChatAttachment }) {
       <PaperclipIcon className="size-4 shrink-0" />
       <span className="wrap-break-word">{attachment.name}</span>
     </a>
+  );
+}
+
+/**
+ * Fullscreen preview for a clicked chat image. `z-60` so it layers above the
+ * mweb chat sheet, which is itself a fullscreen `z-50` dialog.
+ */
+function ImageLightbox({
+  attachment,
+  onClose,
+}: {
+  attachment: ChatAttachment;
+  onClose: () => void;
+}) {
+  // ESC closes; body scroll is locked while open.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={attachment.name}
+      onClick={(e) => {
+        // Click on the backdrop (this wrapper) closes; clicks on the image or
+        // the close button are ignored here.
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="animate-fade-in fixed inset-0 z-60 flex items-center justify-center bg-black/80 p-4"
+    >
+      <button
+        type="button"
+        aria-label="Tutup"
+        onClick={onClose}
+        className="absolute right-4 top-4 text-white/80 transition hover:text-white"
+      >
+        <XIcon className="size-7" />
+      </button>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={attachment.url}
+        alt={attachment.name}
+        className="animate-fade-in-scale max-h-full max-w-full rounded-lg object-contain"
+      />
+    </div>,
+    document.body,
   );
 }
 
