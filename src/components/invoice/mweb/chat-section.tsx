@@ -6,16 +6,19 @@ import {
   ChatBubble,
   ChatComposer,
   ChatSkeleton,
+  PARTNER_NAME,
+  VerifiedBadge,
+  shouldShowSenderName,
 } from "@/components/invoice/chat-panel";
 import { useChat } from "@/components/invoice/use-chat";
+import { getSellerActivity } from "@/lib/format-activity";
 
 type ChatSectionProps = {
   orderId: number;
   buyerId: string;
   sellerId: number;
   buyerName?: string;
-  /** Display name of the counterparty shown in the chat sheet header. */
-  sellerName?: string;
+  paidAt?: string | null;
 };
 
 /**
@@ -29,9 +32,9 @@ export function ChatSection({
   buyerId,
   sellerId,
   buyerName,
-  sellerName = "Penjual",
+  paidAt,
 }: ChatSectionProps) {
-  const chat = useChat({ orderId, buyerId, sellerId, buyerName });
+  const chat = useChat({ orderId, buyerId, sellerId, buyerName, paidAt });
   const { messages } = chat;
 
   const [open, setOpen] = useState(false);
@@ -74,8 +77,12 @@ export function ChatSection({
         <p className="text-center text-xs font-semibold text-(--color-text-subdued)">
           Hari ini
         </p>
-        {messages.map((msg) => (
-          <ChatBubble key={msg.id} message={msg} />
+        {messages.map((msg, i) => (
+          <ChatBubble
+            key={msg.id}
+            message={msg}
+            showSenderName={shouldShowSenderName(messages, i)}
+          />
         ))}
       </div>
 
@@ -95,19 +102,15 @@ export function ChatSection({
         </button>
       </div>
 
-      {open && (
-        <ChatSheet sellerName={sellerName} chat={chat} onClose={closeSheet} />
-      )}
+      {open && <ChatSheet chat={chat} onClose={closeSheet} />}
     </section>
   );
 }
 
 function ChatSheet({
-  sellerName,
   chat,
   onClose,
 }: {
-  sellerName: string;
   chat: ReturnType<typeof useChat>;
   onClose: () => void;
 }) {
@@ -123,7 +126,9 @@ function ChatSheet({
     historyLoading,
     authError,
     sendError,
+    sellerLastActivity,
   } = chat;
+  const sellerStatus = getSellerActivity(sellerLastActivity);
 
   // Auto-scroll to the latest bubble on open and whenever messages change.
   const messagesRef = useRef<HTMLDivElement>(null);
@@ -148,7 +153,7 @@ function ChatSheet({
 
   return (
     <div className="animate-slide-up fixed inset-0 z-50 flex flex-col bg-white" role="dialog" aria-modal="true">
-      <header className="flex items-center gap-3 border-b border-(--color-border-low) px-4 py-3">
+      <header className="flex items-center gap-3 border-b border-(--color-border-low) px-4 py-2">
         <button
           type="button"
           onClick={onClose}
@@ -166,9 +171,24 @@ function ChatSheet({
             />
           </svg>
         </button>
-        <p className="font-[family-name:var(--font-heading)] truncate text-base font-bold leading-5 text-(--color-text-title)">
-          {sellerName}
-        </p>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex items-center gap-1">
+            <span className="font-[family-name:var(--font-heading)] truncate text-base font-bold leading-5 text-(--color-text-title)">
+              {PARTNER_NAME}
+            </span>
+            <VerifiedBadge className="size-5 shrink-0" />
+          </div>
+          <div className="flex items-center gap-1">
+            <span
+              className={`size-2.5 shrink-0 rounded-full ${
+                sellerStatus.online ? "bg-[#35c092]" : "bg-(--color-text-subdued)"
+              }`}
+            />
+            <span className="text-xs leading-4 text-(--color-text-subdued)">
+              {sellerStatus.label}
+            </span>
+          </div>
+        </div>
       </header>
 
       <div ref={messagesRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
@@ -179,8 +199,12 @@ function ChatSheet({
           Hari ini
         </p>
         {historyLoading && <ChatSkeleton />}
-        {messages.map((msg) => (
-          <ChatBubble key={msg.id} message={msg} />
+        {messages.map((msg, i) => (
+          <ChatBubble
+            key={msg.id}
+            message={msg}
+            showSenderName={shouldShowSenderName(messages, i)}
+          />
         ))}
         {(authError || sendError) && (
           <p

@@ -12,20 +12,26 @@ export type { ChatAttachment, ChatMessage };
 /** Reject attachments larger than this before attempting the upload. */
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 
-export const SYSTEM_GREETING: ChatMessage = {
-  id: "system-welcome",
-  author: "system",
-  text:
-    "Terima kasih telah berbelanja di Lapakgaming, selanjutnya kamu bisa bertanya melalui chat ini untuk mendapatkan link private server dan buat janji bertemu di dalam game untuk melakukan trading.",
-  timestamp: "Pesan otomatis 12:00",
-  authoredByBuyer: false,
-};
+const SYSTEM_GREETING_TEXT =
+  "Terima kasih telah berbelanja di Lapakgaming, selanjutnya kamu bisa bertanya melalui chat ini untuk mendapatkan link private server dan buat janji bertemu di dalam game untuk melakukan trading.";
+
+function buildSystemGreeting(paidAt?: string | null): ChatMessage {
+  return {
+    id: "system-welcome",
+    author: "system",
+    text: SYSTEM_GREETING_TEXT,
+    timestamp: `Pesan otomatis ${formatPaidTime(paidAt)}`,
+    authoredByBuyer: false,
+  };
+}
 
 export type UseChatArgs = {
   orderId: number;
   buyerId: string;
   sellerId: number;
   buyerName?: string;
+  /** Transaction paid timestamp; stamps the auto-greeting bubble. */
+  paidAt?: string | null;
 };
 
 /**
@@ -33,12 +39,13 @@ export type UseChatArgs = {
  * mobile chat preview/sheet ({@link ChatSection}). Mounts the PubNub channel,
  * mints the chat token, and exposes the message list, draft, and send handler.
  */
-export function useChat({ orderId, buyerId, sellerId, buyerName }: UseChatArgs) {
+export function useChat({ orderId, buyerId, sellerId, buyerName, paidAt }: UseChatArgs) {
   const [token, setToken] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [sellerLastActivity, setSellerLastActivity] = useState<string | null>(null);
 
-  const [messages, setMessages] = useState<ChatMessage[]>([SYSTEM_GREETING]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [buildSystemGreeting(paidAt)]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [attaching, setAttaching] = useState(false);
@@ -57,6 +64,22 @@ export function useChat({ orderId, buyerId, sellerId, buyerName }: UseChatArgs) 
     return () => controller.abort();
   }, []);
 
+  const refreshChatToken = useCallback(async () => {
+    const res = await partnerBrowserApi.authenticateChat();
+    return res.token;
+  }, []);
+
+  // Seller presence for the chat header pill. Non-fatal: on failure the pill
+  // just falls back to ">7 Hari Lalu".
+  useEffect(() => {
+    const controller = new AbortController();
+    partnerBrowserApi
+      .getSellerInfo(sellerId, { signal: controller.signal })
+      .then((info) => setSellerLastActivity(info.last_activity_time ?? null))
+      .catch(() => { });
+    return () => controller.abort();
+  }, [sellerId]);
+
   const handleIncoming = useCallback((msg: ChatMessage) => {
     setMessages((prev) => {
       // De-dup by id: when we publish optimistically we tag the local bubble
@@ -72,11 +95,12 @@ export function useChat({ orderId, buyerId, sellerId, buyerName }: UseChatArgs) 
     channel: `non_order_partnership_${orderId}_${buyerId}_${sellerId}`,
     buyerId,
     onMessage: handleIncoming,
+    refreshToken: refreshChatToken,
   });
 
   async function handleSend() {
     const text = draft.trim();
-    if (!text) return;
+    if (!text || sending) return;
     setSendError(null);
     setSending(true);
     setDraft("");
@@ -96,9 +120,10 @@ export function useChat({ orderId, buyerId, sellerId, buyerName }: UseChatArgs) 
     try {
       await publish(html, id);
     } catch (err) {
-      // Roll back the optimistic bubble on failure.
+      // Roll back the optimistic bubble on failure; restore the failed text
+      // unless the user has already typed something new.
       setMessages((prev) => prev.filter((m) => m.id !== id));
-      setDraft(text);
+      setDraft((cur) => cur || text);
       setSendError(err instanceof Error ? err.message : "Tidak dapat mengirim pesan.");
     } finally {
       setSending(false);
@@ -106,7 +131,7 @@ export function useChat({ orderId, buyerId, sellerId, buyerName }: UseChatArgs) 
   }
 
   async function handleSendFile(file: File) {
-    if (!file) return;
+    if (!file || attaching) return;
     setSendError(null);
     if (!file.type.startsWith("image/")) {
       setSendError("Hanya gambar yang dapat dikirim.");
@@ -155,13 +180,25 @@ export function useChat({ orderId, buyerId, sellerId, buyerName }: UseChatArgs) 
     historyLoading,
     authError,
     sendError,
+    sellerLastActivity,
   };
 }
 
-function formatNowTime(): string {
-  return new Date().toLocaleTimeString("id-ID", {
+function formatClockTime(date: Date): string {
+  return date.toLocaleTimeString("id-ID", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
   });
+}
+
+function formatNowTime(): string {
+  return formatClockTime(new Date());
+}
+
+function formatPaidTime(raw?: string | null): string {
+  if (!raw) return "12:00";
+  // The gateway returns "YYYY-MM-DD HH:mm:ss"; Safari needs the ISO "T" form.
+  const d = new Date(raw.includes("T") ? raw : raw.replace(" ", "T"));
+  return Number.isNaN(d.getTime()) ? "12:00" : formatClockTime(d);
 }

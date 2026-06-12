@@ -30,6 +30,7 @@ type UsePubNubChatOptions = {
   /** Buyer id; the PubNub user id is `buyer_{buyerId}`. */
   buyerId: string;
   onMessage: (msg: ChatMessage) => void;
+  refreshToken?: () => Promise<string>;
 };
 
 type UsePubNubChatResult = {
@@ -59,19 +60,25 @@ export function usePubNubChat({
   channel,
   buyerId,
   onMessage,
+  refreshToken,
 }: UsePubNubChatOptions): UsePubNubChatResult {
   const chatRef = useRef<Chat | null>(null);
   const channelRef = useRef<Channel | null>(null);
+  // Current PAM token; diverges from the `token` prop after an expiry refresh
+  // (the prop deliberately stays put, see {@link refreshToken}). Signs file URLs.
+  const tokenRef = useRef(token);
   const [ready, setReady] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const userId = `buyer_${buyerId}`;
 
-  // Keep a ref to the latest onMessage so the connect listener (set up once per
-  // channel) always calls the current callback.
+  // Keep refs to the latest callbacks so the connect listener / send retry (set
+  // up once per channel) always call the current ones.
   const onMessageRef = useRef(onMessage);
+  const refreshTokenRef = useRef(refreshToken);
   useLayoutEffect(() => {
     onMessageRef.current = onMessage;
+    refreshTokenRef.current = refreshToken;
   });
 
   useEffect(() => {
@@ -85,6 +92,7 @@ export function usePubNubChat({
 
     let cancelled = false;
     let disconnect: (() => void) | undefined;
+    tokenRef.current = token;
 
     (async () => {
       setHistoryLoading(true);
@@ -116,7 +124,7 @@ export function usePubNubChat({
         // Subscribe to live messages before replaying history so nothing
         // arriving mid-fetch is missed (dedupe in the store handles overlap).
         disconnect = ch.connect((message) => {
-          const normalized = normalizeMessage(message, buyerId, token, userId);
+          const normalized = normalizeMessage(message, buyerId, tokenRef.current, userId);
           if (normalized) onMessageRef.current(normalized);
         });
         setReady(true);
@@ -124,7 +132,7 @@ export function usePubNubChat({
         const history = await ch.getHistory({ count: 50 });
         if (cancelled) return;
         for (const message of history.messages) {
-          const normalized = normalizeMessage(message, buyerId, token, userId);
+          const normalized = normalizeMessage(message, buyerId, tokenRef.current, userId);
           if (normalized) onMessageRef.current(normalized);
         }
       } catch (err) {
@@ -144,22 +152,53 @@ export function usePubNubChat({
     };
   }, [token, channel, buyerId, userId]);
 
-  const publish = useCallback(async (text: string, localId?: string) => {
-    const ch = channelRef.current;
-    if (!ch) throw new Error("Chat is not connected yet.");
-    await ch.sendText(text, localId ? { meta: { localId } } : undefined);
+  const sendWithReauth = useCallback(async (send: () => Promise<unknown>) => {
+    try {
+      await send();
+    } catch (err) {
+      const refresh = refreshTokenRef.current;
+      if (!refresh || !chatRef.current || !isPubNubAccessDenied(err)) throw err;
+      const fresh = await refresh();
+      tokenRef.current = fresh;
+      chatRef.current.sdk.setToken(fresh);
+      await send();
+    }
   }, []);
 
-  const sendFile = useCallback(async (file: File, localId?: string) => {
-    const ch = channelRef.current;
-    if (!ch) throw new Error("Chat is not connected yet.");
-    await ch.sendText("", {
-      files: [file],
-      ...(localId ? { meta: { localId } } : {}),
-    });
-  }, []);
+  const publish = useCallback(
+    async (text: string, localId?: string) => {
+      const ch = channelRef.current;
+      if (!ch) throw new Error("Chat is not connected yet.");
+      await sendWithReauth(() =>
+        ch.sendText(text, localId ? { meta: { localId } } : undefined),
+      );
+    },
+    [sendWithReauth],
+  );
+
+  const sendFile = useCallback(
+    async (file: File, localId?: string) => {
+      const ch = channelRef.current;
+      if (!ch) throw new Error("Chat is not connected yet.");
+      await sendWithReauth(() =>
+        ch.sendText("", {
+          files: [file],
+          ...(localId ? { meta: { localId } } : {}),
+        }),
+      );
+    },
+    [sendWithReauth],
+  );
 
   return { ready, historyLoading, publish, sendFile };
+}
+
+function isPubNubAccessDenied(err: unknown): boolean {
+  const e = err as {
+    status?: { category?: string };
+    cause?: { status?: { category?: string } };
+  };
+  return (e?.status?.category ?? e?.cause?.status?.category) === "PNAccessDeniedCategory";
 }
 
 function normalizeMessage(
