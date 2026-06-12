@@ -185,7 +185,7 @@ export const partnerApi = {
   },
 
   /**
-   * Requires one of game_id / item_type_id / item_info_group_id as an indexed filter.
+   * Requires one of game_id / item_type_id / item_info_group_id / id as an indexed filter.
    * The validator declares item_type_id as required.
    */
   getProducts(params: ProductListQuery, opts?: { hashCode?: string }) {

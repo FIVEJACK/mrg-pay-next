@@ -20,9 +20,6 @@ type PageProps = {
   searchParams: Promise<{
     product_id?: string;
     hash_code?: string;
-    item_type_id?: string;
-    item_category_id?: string;
-    game_id?: string;
     qty?: string;
   }>;
 };
@@ -31,12 +28,9 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const hashCode = sp.hash_code?.trim();
   const productId = numOrUndef(sp.product_id);
-  const itemTypeId = numOrUndef(sp.item_type_id);
-  const itemCategoryId = numOrUndef(sp.item_category_id);
-  const gameId = numOrUndef(sp.game_id);
   const initialQuantity = Math.max(1, Number(sp.qty ?? "1") || 1);
 
-  if (!hashCode || !productId || !itemTypeId) {
+  if (!hashCode || !productId) {
     return (
       <CheckoutShell>
         <MissingParamsState />
@@ -46,11 +40,12 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
 
   const listing = await safeCall(() =>
     partnerApi.getProducts(
-      { id: productId, game_id: gameId, item_type_id: itemTypeId, per_page: 1 },
+      { id: productId, per_page: 1 },
       { hashCode },
     ),
   );
   const product: Product | undefined = listing?.data?.[0];
+  console.log(product);
   if (!product) {
     return (
       <CheckoutShell>
@@ -65,7 +60,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
   const country = scope?.country_code ?? "ID";
   const currency = scope?.currency ?? "IDR";
   const mobile = await isMobile();
-  const categoryId = itemCategoryId ?? product.item_category_id;
+  const categoryId = product.item_category_id;
 
   return (
     <CheckoutShell>
@@ -133,7 +128,7 @@ function MissingParamsState() {
       <p className="mt-3 text-(--color-text-body)">
         Buka halaman ini dengan{" "}
         <code>
-          /checkout?product_id=&lt;id&gt;&amp;item_type_id=&lt;id&gt;&amp;hash_code=&lt;hash&gt;
+          /checkout?product_id=&lt;id&gt;&amp;hash_code=&lt;hash&gt;
         </code>
         .
       </p>

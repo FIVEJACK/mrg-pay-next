@@ -40,10 +40,6 @@ export function ProductListMobile({ hashCode }: ProductListViewProps) {
       product_id: String(selected.productId),
       hash_code: hashCode,
     });
-    if (selected.itemTypeId != null) qs.set("item_type_id", String(selected.itemTypeId));
-    if (selected.itemCategoryId != null)
-      qs.set("item_category_id", String(selected.itemCategoryId));
-    if (selected.gameId != null) qs.set("game_id", String(selected.gameId));
     router.push(`/checkout?${qs.toString()}`);
   }
 
