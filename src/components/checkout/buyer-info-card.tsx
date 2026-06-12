@@ -100,7 +100,14 @@ export function BuyerInfoCard({
         </label>
         <p className="flex-1 self-center font-[family-name:var(--font-heading)] text-sm leading-5 text-(--color-text-subdued) lg:pt-6">
           Hanya untuk kirim status transaksi.{" "}
-          <span className="text-(--color-brand)">Lihat Kebijakan Privasi</span>
+          <a
+            href="https://www.lapakgaming.com/id-id/privacy-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-(--color-brand)"
+          >
+            Lihat Kebijakan Privasi
+          </a>
         </p>
       </div>
     </section>

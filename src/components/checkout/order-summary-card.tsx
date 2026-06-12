@@ -100,7 +100,7 @@ export function OrderSummaryCard({
   );
 
   const stepper = (
-    <div className="flex h-11 w-[160px] items-stretch">
+    <div className="flex h-11 w-[172px] items-stretch">
       <button
         type="button"
         aria-label="Kurangi jumlah"
@@ -139,11 +139,8 @@ export function OrderSummaryCard({
     </div>
   );
 
-  // Desktop product header: the unit price lives inline in the subtitle
-  // (e.g. "Fish It! • Rp20.000") instead of a separate right-aligned block,
-  // with the same grosir treatment as mobile when a wholesale tier is active.
   const productInfoWithPrice = (
-    <div className="flex min-w-0 flex-1 items-start gap-3">
+    <div className="flex min-w-0 flex-1 items-center gap-3">
       <div className="size-12 shrink-0 overflow-hidden rounded-lg border border-(--color-border) bg-(--color-bg-subtle)">
         {productImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -151,25 +148,18 @@ export function OrderSummaryCard({
         ) : null}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <p className="font-[family-name:var(--font-heading)] truncate text-base font-bold leading-6 text-(--color-text-title)">
+        <p className="font-[family-name:var(--font-heading)] truncate text-base font-bold leading-5 text-(--color-text-title)">
           {productName}
         </p>
-        <div className="flex min-w-0 items-center gap-2 font-[family-name:var(--font-heading)] text-sm leading-5 text-(--color-text-subdued)">
-          {productSubtitle && <span className="truncate">{productSubtitle}</span>}
-          {productSubtitle && (
-            <span className="size-1 shrink-0 rounded-full bg-(--color-text-subdued)" />
-          )}
-          <span className="shrink-0 whitespace-nowrap">{formatPriceIDR(unitPrice)}</span>
+        <div className="flex items-baseline gap-1 whitespace-nowrap font-[family-name:var(--font-heading)]">
           {wholesaleActive && (
-            <>
-              <span className="shrink-0 whitespace-nowrap line-through">
-                {formatPriceIDR(basePrice)}
-              </span>
-              <span className="shrink-0 rounded bg-[#fdeded] px-1 py-0.5 text-[11px] leading-[14px] text-(--color-promotion)">
-                Grosir
-              </span>
-            </>
+            <span className="text-sm leading-5 text-(--color-text-subdued) line-through">
+              {formatPriceIDR(basePrice)}
+            </span>
           )}
+          <span className="text-base leading-5 text-(--color-text-secondary)">
+            {formatPriceIDR(unitPrice)}
+          </span>
         </div>
       </div>
     </div>
@@ -178,7 +168,7 @@ export function OrderSummaryCard({
   const stockLabel = maxQuantity !== undefined && (
     <div className="flex shrink-0 items-center gap-1 whitespace-nowrap font-[family-name:var(--font-heading)] text-base leading-5">
       <span className="text-(--color-text-subdued)">Stok:</span>
-      <span className="font-bold text-(--color-text-secondary)">{maxQuantity}</span>
+      <span className="text-(--color-text-secondary)">{maxQuantity}</span>
     </div>
   );
 

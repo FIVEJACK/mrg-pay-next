@@ -12,13 +12,15 @@ export function SupportCard({ bare }: { bare?: boolean }) {
       <p className="font-[family-name:var(--font-heading)] text-sm leading-5 text-(--color-text-body)">
         Butuh bantuan terkait pesanan ini?
       </p>
-      <button
-        type="button"
+      <a
+        href="https://api.whatsapp.com/send?phone=6281280000203"
+        target="_blank"
+        rel="noopener noreferrer"
         className="flex items-center gap-1.5 rounded-full border-2 border-(--color-brand) px-4 py-2 text-sm font-bold text-(--color-brand) transition hover:bg-(--color-surface-focus)"
       >
         <HeadsetIcon className="size-4" />
         Hubungi CS
-      </button>
+      </a>
     </section>
   );
 }
