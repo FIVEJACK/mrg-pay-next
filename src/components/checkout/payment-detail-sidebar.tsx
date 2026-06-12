@@ -48,8 +48,15 @@ export function PaymentDetailSidebar({
 
         <p className="text-center font-[family-name:var(--font-heading)] text-xs leading-4 text-(--color-text-subdued)">
           Dengan melanjutkan, saya setuju dengan{" "}
-          <span className="text-(--color-brand)">Syarat &amp; Ketentuan</span> yang berlaku di
-          Lapakgaming.
+          <a
+            href="https://www.lapakgaming.com/id-id/term-and-condition"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-(--color-brand)"
+          >
+            Syarat &amp; Ketentuan
+          </a>{" "}
+          yang berlaku di Lapakgaming.
         </p>
 
         <div className="flex items-start justify-center gap-2">
