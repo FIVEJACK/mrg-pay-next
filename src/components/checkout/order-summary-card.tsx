@@ -15,7 +15,7 @@ type OrderSummaryCardProps = {
   productSubtitle?: string | null;
   productImageUrl?: string | null;
   unitPrice: number;
-  /** Pre-discount unit price shown inline in the desktop product subtitle. Defaults to `unitPrice`. */
+  /** Pre-discount unit price, struck through when a wholesale tier is active. Defaults to `unitPrice`. */
   basePrice?: number;
   quantity: number;
   maxQuantity?: number;
@@ -140,7 +140,8 @@ export function OrderSummaryCard({
   );
 
   // Desktop product header: the unit price lives inline in the subtitle
-  // (e.g. "Fish It! • Rp20.000") instead of a separate right-aligned block.
+  // (e.g. "Fish It! • Rp20.000") instead of a separate right-aligned block,
+  // with the same grosir treatment as mobile when a wholesale tier is active.
   const productInfoWithPrice = (
     <div className="flex min-w-0 flex-1 items-start gap-3">
       <div className="size-12 shrink-0 overflow-hidden rounded-lg border border-(--color-border) bg-(--color-bg-subtle)">
@@ -158,7 +159,17 @@ export function OrderSummaryCard({
           {productSubtitle && (
             <span className="size-1 shrink-0 rounded-full bg-(--color-text-subdued)" />
           )}
-          <span className="shrink-0 whitespace-nowrap">{formatPriceIDR(basePrice ?? unitPrice)}</span>
+          <span className="shrink-0 whitespace-nowrap">{formatPriceIDR(unitPrice)}</span>
+          {wholesaleActive && (
+            <>
+              <span className="shrink-0 whitespace-nowrap line-through">
+                {formatPriceIDR(basePrice)}
+              </span>
+              <span className="shrink-0 rounded bg-[#fdeded] px-1 py-0.5 text-[11px] leading-[14px] text-(--color-promotion)">
+                Grosir
+              </span>
+            </>
+          )}
         </div>
       </div>
     </div>

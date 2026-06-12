@@ -38,8 +38,6 @@ export function CheckoutDesktop(props: CheckoutViewProps) {
     selectedFee,
     total,
     baseUnitPrice,
-    baseSubtotal,
-    wholesaleDiscount,
     wholesaleTier,
     submitting,
     submitError,
@@ -86,9 +84,8 @@ export function CheckoutDesktop(props: CheckoutViewProps) {
       </div>
 
       <PaymentDetailSidebar
-        subtotal={baseSubtotal}
+        subtotal={subtotal}
         adminFee={selectedFee}
-        discount={wholesaleDiscount}
         total={total}
         ctaLabel="Lanjut ke Pembayaran"
         ctaDisabled={paymentLoading || effectivePaymentId == null}
