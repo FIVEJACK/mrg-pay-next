@@ -44,7 +44,7 @@ export function ProductCard({ product, selected, mobile, onClick }: ProductCardP
           </div>
         )}
       </div>
-      <div className="flex flex-1 flex-col gap-1 px-3 py-2">
+      <div className="flex h-[110px] flex-col gap-1 px-3 py-2">
         <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-(--color-text-title)">
           {product.name}
         </h3>

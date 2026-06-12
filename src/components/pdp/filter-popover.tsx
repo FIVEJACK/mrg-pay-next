@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-
 import { SearchIcon, XIcon } from "@/components/icon";
 
 export type FilterOptionId = number | string;
@@ -105,6 +104,7 @@ export function FilterPopover({
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onInput={(e) => { if (!e.currentTarget.value) setQuery(""); }}
               placeholder="Search…"
               className="w-full bg-transparent text-sm text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none"
             />

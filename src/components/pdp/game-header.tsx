@@ -6,7 +6,7 @@ type GameHeaderProps = {
   ctaLabel?: string;
 };
 
-export function GameHeader({ name, logoUrl, ctaLabel = "Lihat cara transaksi" }: GameHeaderProps) {
+export function GameHeader({ name, logoUrl }: GameHeaderProps) {
   return (
     <div className="flex items-center gap-4">
       <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-[var(--color-surface-secondary)]">
@@ -28,12 +28,6 @@ export function GameHeader({ name, logoUrl, ctaLabel = "Lihat cara transaksi" }:
         <h1 className="font-[family-name:var(--font-heading)] text-[28px] font-bold leading-[34px] text-[#141414]">
           {name}
         </h1>
-        <button
-          type="button"
-          className="text-left text-base font-bold text-[var(--color-brand)] hover:underline"
-        >
-          {ctaLabel}
-        </button>
       </div>
     </div>
   );
