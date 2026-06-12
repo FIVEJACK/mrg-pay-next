@@ -7,8 +7,6 @@ import { ShieldFilledIcon } from "@/components/icon";
 type PaymentDetailSidebarProps = {
   subtotal: number;
   adminFee: number;
-  /** Wholesale ("grosir") saving, shown as a negative "Potongan Grosir" row when > 0. */
-  discount?: number;
   total: number;
   ctaLabel: string;
   ctaDisabled: boolean;
@@ -19,7 +17,6 @@ type PaymentDetailSidebarProps = {
 export function PaymentDetailSidebar({
   subtotal,
   adminFee,
-  discount = 0,
   total,
   ctaLabel,
   ctaDisabled,
@@ -35,13 +32,6 @@ export function PaymentDetailSidebar({
       <div className="flex flex-col gap-3">
         <Row label="Total pesanan" value={formatPriceIDR(subtotal)} />
         <Row label="Biaya admin" value={formatPriceIDR(adminFee)} />
-        {discount > 0 && (
-          <Row
-            label="Potongan Grosir"
-            value={`-${formatPriceIDR(discount)}`}
-            valueClassName="font-[family-name:var(--font-heading)] text-base leading-6 text-(--color-success)"
-          />
-        )}
         <div className="h-px w-full bg-(--color-border)" />
         <Row label="Total pembayaran" value={formatPriceIDR(total)} emphasized />
       </div>
@@ -77,24 +67,21 @@ function Row({
   label,
   value,
   emphasized,
-  valueClassName,
 }: {
   label: React.ReactNode;
   value: string;
   emphasized?: boolean;
-  /** Overrides the default value styling (e.g. the green "Potongan Grosir" saving). */
-  valueClassName?: string;
 }) {
   const cls = emphasized
     ? "font-[family-name:var(--font-heading)] text-base font-bold leading-6 text-(--color-text-title)"
     : "font-[family-name:var(--font-heading)] text-base leading-6 text-(--color-text-secondary)";
-  const defaultValueCls = emphasized
+  const valueCls = emphasized
     ? "font-[family-name:var(--font-heading)] text-base font-bold leading-6 text-(--color-text-title)"
     : "font-[family-name:var(--font-heading)] text-base leading-6 text-(--color-text-title)";
   return (
     <div className="flex items-center gap-4">
       <span className={cls}>{label}</span>
-      <span className={`ml-auto text-right ${valueClassName ?? defaultValueCls}`}>{value}</span>
+      <span className={`ml-auto text-right ${valueCls}`}>{value}</span>
     </div>
   );
 }
