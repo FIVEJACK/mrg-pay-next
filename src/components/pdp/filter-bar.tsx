@@ -13,7 +13,7 @@ import { FilterPopover, type FilterOption } from "./filter-popover";
 import { CheckboxFilterPopover } from "./checkbox-filter-popover";
 import { RangeFilterPopover } from "./range-filter-popover";
 import { SortPopover } from "./sort-popover";
-import { ChevronDownIcon, SearchIcon } from "@/components/icon";
+import { ChevronDownIcon, SearchIcon, XIcon } from "@/components/icon";
 import { Popover } from "./popover";
 
 type Filters = {
@@ -215,6 +215,10 @@ export function FilterBar({
     [servers],
   );
 
+  const [searchValue, setSearchValue] = useState(keyword ?? "");
+
+  useEffect(() => { setSearchValue(keyword ?? ""); }, [keyword]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -316,21 +320,29 @@ export function FilterBar({
         role="search"
         onSubmit={(e) => {
           e.preventDefault();
-          const fd = new FormData(e.currentTarget);
-          const value = String(fd.get("keyword") ?? "").trim();
-          onChange({ keyword: value || undefined });
+          onChange({ keyword: searchValue.trim() || undefined });
         }}
         className="flex w-[300px] shrink-0"
       >
         <label className="flex h-11 w-full items-center gap-2 rounded-2xl border border-(--color-border) bg-white px-3">
-          <SearchIcon className="size-5 text-(--color-text-subdued)" />
+          <SearchIcon className="size-5 shrink-0 text-(--color-text-subdued)" />
           <input
-            type="search"
-            name="keyword"
-            defaultValue={keyword}
+            type="text"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Search…"
-            className="w-full bg-transparent text-base text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none"
+            className="min-w-0 flex-1 bg-transparent text-base text-(--color-text-body) placeholder:text-(--color-text-subdued) outline-none"
           />
+          {searchValue && (
+            <button
+              type="button"
+              onClick={() => { setSearchValue(""); onChange({ keyword: undefined }); }}
+              aria-label="Clear search"
+              className="flex shrink-0 items-center justify-center text-(--color-text-subdued) hover:text-(--color-text-body)"
+            >
+              <XIcon className="size-4" />
+            </button>
+          )}
         </label>
       </form>
 
