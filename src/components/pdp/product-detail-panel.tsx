@@ -18,7 +18,7 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
   const [tab, setTab] = useState<Tab>("description");
   const [imageIndex, setImageIndex] = useState(0);
 
-  useEffect(() => { setImageIndex(0); }, [product.id]);
+  useEffect(() => { if (imageIndex !== 0) setImageIndex(0); }, [product.id]);
 
   const allImages: string[] = [];
   for (const img of product.images ?? []) {
@@ -140,7 +140,7 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
         <div className="mt-2 flex flex-wrap gap-1.5">
           {product.stock !== undefined && (
             <span className="rounded-sm border border-(--color-border) bg-white px-2.5 py-0.5 text-xs text-(--color-text-body)">
-              Stok: {product.stock.toLocaleString("en-US")}
+              Stok: {product.stock}
             </span>
           )}
           <span className="rounded-sm border border-(--color-border) bg-white px-2.5 py-0.5 text-xs text-(--color-text-body)">

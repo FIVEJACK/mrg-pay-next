@@ -196,11 +196,11 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
                 </div>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {product.stock !== undefined && (
-                    <span className="rounded-sm border border-(--color-border) bg-white px-2.5 py-0.5 text-xm text-(--color-text-body)">
-                      Stok: {product.stock.toLocaleString("en-US")}
+                    <span className="rounded-sm border border-(--color-border) bg-white px-2.5 py-0.5 text-xs text-(--color-text-body)">
+                      Stok: {product.stock}
                     </span>
                   )}
-                  <span className="rounded-sm border border-(--color-border) bg-white px-2.5 py-0.5 text-xm text-(--color-text-body)">
+                  <span className="rounded-sm border border-(--color-border) bg-white px-2.5 py-0.5 text-xs text-(--color-text-body)">
                     Min. beli: {product.wholesale?.[0]?.minimum_order ?? 1}
                   </span>
                 </div>
