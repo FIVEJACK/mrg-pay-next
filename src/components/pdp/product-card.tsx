@@ -36,6 +36,7 @@ export function ProductCard({ product, selected, mobile, onClick }: ProductCardP
             alt={product.name}
             fill
             sizes="(min-width: 1280px) 220px, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+            loading="eager"
             className="object-cover"
           />
         ) : (

@@ -1,5 +1,4 @@
 import type { Product } from "@/lib/partner-api";
-
 import { ProductCard } from "./product-card";
 
 type ProductGridProps = {
