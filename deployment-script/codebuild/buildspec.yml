@@ -25,7 +25,7 @@ phases:
       - echo Build started on `date` for $CODEBUILD_SOURCE_REPO_URL using $CODEBUILD_RESOLVED_SOURCE_VERSION
       - export COMMIT_ID=$CODEBUILD_RESOLVED_SOURCE_VERSION
       - yarn config set cache-folder /root/.yarn-cache
-      - yarn global add node-gyp
+      - yarn global add node-gyp --ignore-engines
       - yarn install --frozen-lockfile
       # Use webpack for build: CodeBuild cache restores node_modules as a symlink
       # outside project root, which Turbopack (Next.js 16 default) rejects.
