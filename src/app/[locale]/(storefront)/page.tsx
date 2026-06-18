@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { config } from "@/config/config";
 import { Link } from "@/i18n/navigation";
 
 export const metadata: Metadata = {
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 // Local-dev B2B2C test hash from PARTNER_API.md §1.3.
 // Decodes to { partner_id, game_id: 51, item_type_id: 234, currency, country_code }.
 
-const FEATURED = [
+const FEATURED_DEV = [
   {
     name: "Mobile Legends",
     subtitle: "MLBB — sample B2B2C scope",
@@ -28,6 +29,25 @@ const FEATURED = [
   }
 ];
 
+const FEATURED_PROD_TEST = [
+    {
+    name: "Grow A Garden 2",
+    subtitle: "-",
+    hashCode: '27988f40241b1d70e73d612a8f7e10f1b55c7c50f9b03f08385057243f0a6d763ff32abd0b5ce1607b8f2c10334a4534552db2a8c95d4948bf6cf094a2c28592c58af6d6c8578dff22cbf0511b07b771d896388cc2cc6c67bb03dce1497b',
+  },
+  {
+    name: "Blox Fruits",
+    subtitle: "-",
+    hashCode: '31f7f3d9f8cf6b66da967a0f526963bc361c74a695a6952160f04ecdeb4374a993d8c2ffe18fc3e9e9c521a992faa0cf83e8a13271f308d35f60f6abb964e90a5d21ebb1108512d503e19396f8ccfdcdfb98f2a1dbe302af7d31e77796bbed',
+  },
+  {
+    name:"Pet Simulator 99!",
+    subtitle: "-",
+    hashCode: 'b00f481940754c97d6b15a6fbf0c099fc31cfdf690564c0e6e1e658a1a35c5b87e3dad25edeb912f1d8aa9d46ad29ff2a627c77f29958391a9bbc41f08f3381a04dc8cb99c2b19dd5cc36ab7d385d864158b32c8b8728241193d55e362ec09',
+  }
+]
+const FEATURED =
+  config.environment === "production" ? FEATURED_PROD_TEST : FEATURED_DEV;
 export default function HomePage() {
   return (
     <div className="mx-auto w-full max-w-[1440px] px-6 py-10 lg:px-[116px]">
