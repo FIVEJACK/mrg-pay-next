@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { FilterBar, buildAttributePayload } from "@/components/pdp/filter-bar";
 import { FilterBarMobile } from "@/components/pdp/mweb/filter-bar-mobile";
+import { ProductDetailSheet } from "@/components/pdp/mweb/product-detail-sheet";
 import { Pagination } from "@/components/pdp/pagination";
 import { ProductDetailPanel } from "@/components/pdp/product-detail-panel";
 import { ProductGrid } from "@/components/pdp/product-grid";
@@ -13,7 +14,7 @@ import {
   ProductGridSkeleton,
   ResultsCountSkeleton,
 } from "@/components/pdp/skeletons";
-import { CLEAR_SELECTION, postProductSelection } from "@/components/pdp/product-list-messaging";
+import { postProductSelection } from "@/components/pdp/product-list-messaging";
 import { CLIENT_NAME, EVENT, trackEvent } from "@/lib/amplitude";
 import { getItemCategoryName } from "@/lib/item-category";
 import { partnerBrowserApi } from "@/lib/partner-api/browser-client";
@@ -80,23 +81,10 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const activeItemType = itemTypes.find((t) => t.id === activeItemTypeId);
 
-  // Sync selection up to the parent window (the iframe shell renders the FAB).
+  // Sync selection up to the parent window so it can render the purchase bar.
   useEffect(() => {
     postProductSelection(selectedProduct, { hashCode, fallbackItemTypeId: activeItemTypeId });
   }, [selectedProduct, hashCode, activeItemTypeId]);
-
-  // Listen for the parent clearing the selection (e.g. mobile detail sheet
-  // closed) so re-selecting the same product re-opens it.
-  useEffect(() => {
-    function onMessage(event: MessageEvent) {
-      if (event.origin !== window.location.origin) return;
-      if ((event.data as { type?: unknown } | null)?.type === CLEAR_SELECTION) {
-        setSelectedProduct(null);
-      }
-    }
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, []);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -372,6 +360,13 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
       {!mobile && selectedProduct && (
         // Spacer so iframe content can scroll past the parent's fixed purchase bar.
         <div aria-hidden="true" className="h-20" />
+      )}
+
+      {mobile && (
+        <ProductDetailSheet
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
       )}
     </>
   );

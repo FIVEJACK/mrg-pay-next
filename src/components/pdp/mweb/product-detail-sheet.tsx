@@ -8,42 +8,40 @@ import { computeDiscountPct, formatPriceIDR } from "@/lib/format";
 import { pickProductCoverImage } from "@/lib/partner-api";
 import type { Product } from "@/lib/partner-api";
 import type { ProductImage } from "@/lib/partner-api/types";
-import type { ProductSelectedPayload } from "@/components/pdp/product-list-messaging";
 
 const CLOSE_DURATION = 320;
 type Tab = "description" | "how-to";
 
 type ProductDetailSheetProps = {
-  payload: ProductSelectedPayload | null;
+  product: Product | null;
   onClose: () => void;
-  onBuy: () => void;
 };
 
 function getImageUrl(img: ProductImage): string | null {
   return img.image_url ?? img.horizontal_image_url ?? img.thumbnail_image_url ?? img.vertical_image_url ?? null;
 }
 
-export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailSheetProps) {
+export function ProductDetailSheet({ product, onClose }: ProductDetailSheetProps) {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
-  const [cachedPayload, setCachedPayload] = useState<ProductSelectedPayload | null>(null);
+  const [cachedProduct, setCachedProduct] = useState<Product | null>(null);
   const [tab, setTab] = useState<Tab>("description");
   const [imgIndex, setImgIndex] = useState(0);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => setMounted(true), []);
 
-  // Open / update when new payload arrives
+  // Open / update when a new product is selected
   useEffect(() => {
-    if (!payload) return;
+    if (!product) return;
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
-    setCachedPayload(payload);
+    setCachedProduct(product);
     setClosing(false);
     setOpen(true);
     setTab("description");
     setImgIndex(0);
-  }, [payload]);
+  }, [product]);
 
   // Body scroll lock
   useEffect(() => {
@@ -74,18 +72,18 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
 
   const visible = open || closing;
 
-  // Use the full product object carried in the payload (no re-fetch needed)
-  const product = cachedPayload?.product ?? null;
+  // Use the cached product so content survives the close animation.
+  const p = cachedProduct;
 
-  const rawImages = (product?.images ?? []).map(getImageUrl).filter(Boolean) as string[];
-  const cover = product ? pickProductCoverImage(product) : null;
+  const rawImages = (p?.images ?? []).map(getImageUrl).filter(Boolean) as string[];
+  const cover = p ? pickProductCoverImage(p) : null;
   const allImages = rawImages.length > 0 ? rawImages : cover ? [cover] : [];
 
-  const normalPrice = product?.competitor_price ?? null;
-  const discount = product ? computeDiscountPct(product.seller_price, normalPrice) : null;
-  const itemTypeName = product?.item_type?.name ?? "";
+  const normalPrice = p?.competitor_price ?? null;
+  const discount = p ? computeDiscountPct(p.seller_price, normalPrice) : null;
+  const itemTypeName = p?.item_type?.name ?? "";
   const description = (
-    (product as (Product & { description?: string }) | null)?.description ?? ""
+    (p as (Product & { description?: string }) | null)?.description ?? ""
   ).replace(/<[^>]*>/g, "").trim();
 
   if (!mounted || !visible) return null;
@@ -100,17 +98,18 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
         aria-hidden="true"
       />
 
-      {/* Sheet — 3-row grid: header | scrollable body | sticky footer */}
+      {/* Sheet — 2-row grid: header | scrollable body. The purchase button is
+          rendered by the parent shell as a fixed bar overlaying the bottom. */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Product description"
-        className={`${closing ? "animate-sheet-down" : "animate-sheet-up"} relative grid h-[85dvh] grid-rows-[auto_minmax(0,1fr)_auto] rounded-t-2xl bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.12)]`}
+        className={`${closing ? "animate-sheet-down" : "animate-sheet-up"} relative grid h-[85dvh] grid-rows-[auto_minmax(0,1fr)] rounded-t-2xl bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.12)]`}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3">
           <h3 className="font-[family-name:var(--font-heading)] text-base font-bold text-(--color-text-title)">
-            {product?.name ?? cachedPayload?.productName ?? "Detail Produk"}
+            {p?.name ?? "Detail Produk"}
           </h3>
           <button
             type="button"
@@ -132,7 +131,7 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
               <Image
                 key={allImages[imgIndex]}
                 src={allImages[imgIndex] ?? ""}
-                alt={product?.name ?? cachedPayload?.productName ?? ""}
+                alt={p?.name ?? ""}
                 fill
                 sizes="480px"
                 className="object-cover"
@@ -173,15 +172,15 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
           </div>
 
           {/* Product info */}
-          {product && (
+          {p && (
             <>
               <div className="px-4 pt-4">
                 <h2 className="font-[family-name:var(--font-heading)] text-base font-bold text-(--color-text-title)">
-                  {product.name}
+                  {p.name}
                 </h2>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <span className="text-lg font-bold text-(--color-promotion)">
-                    {formatPriceIDR(product.seller_price)}
+                    {formatPriceIDR(p.seller_price)}
                   </span>
                   {normalPrice && discount !== null && (
                     <>
@@ -195,13 +194,13 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
                   )}
                 </div>
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  {product.stock !== undefined && (
+                  {p.stock !== undefined && (
                     <span className="rounded-sm border border-(--color-border) bg-white px-2.5 py-0.5 text-xs text-(--color-text-body)">
-                      Stok: {product.stock}
+                      Stok: {p.stock}
                     </span>
                   )}
                   <span className="rounded-sm border border-(--color-border) bg-white px-2.5 py-0.5 text-xs text-(--color-text-body)">
-                    Min. beli: {product.wholesale?.[0]?.minimum_order ?? 1}
+                    Min. beli: {p.wholesale?.[0]?.minimum_order ?? 1}
                   </span>
                 </div>
               </div>
@@ -249,25 +248,9 @@ export function ProductDetailSheet({ payload, onClose, onBuy }: ProductDetailShe
               </div>
             </>
           )}
-        </div>
 
-        {/* Sticky footer */}
-        <div className="flex items-center gap-4 border-t border-(--color-border-low) px-4 py-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-lg font-bold text-(--color-promotion)">
-              {formatPriceIDR(product?.seller_price ?? cachedPayload?.productPrice ?? 0)}
-            </p>
-            {cachedPayload?.itemInfoName && (
-              <p className="truncate text-xs text-(--color-text-subdued)">{cachedPayload.itemInfoName}</p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={onBuy}
-            className="h-11 shrink-0 rounded-full bg-(--color-brand) px-8 text-sm font-bold text-white transition hover:opacity-90"
-          >
-            Beli sekarang
-          </button>
+          {/* Spacer so the last content clears the parent's fixed purchase bar. */}
+          <div aria-hidden="true" className="h-24" />
         </div>
       </div>
     </div>,
