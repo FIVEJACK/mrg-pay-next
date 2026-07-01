@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ProductDetailSheet } from "@/components/pdp/mweb/product-detail-sheet";
+import { MobilePurchaseBar } from "@/components/pdp/mweb/mobile-purchase-bar";
 import {
-  CLEAR_SELECTION,
   isProductListMessage,
   PRODUCT_DESELECTED,
   PRODUCT_SELECTED,
@@ -43,15 +42,6 @@ export function ProductListMobile({ hashCode }: ProductListViewProps) {
     router.push(`/checkout?${qs.toString()}`);
   }
 
-  function handleClose() {
-    setSelected(null);
-    // Tell the iframe to clear its selection so re-tapping the same product reopens the sheet.
-    iframeRef.current?.contentWindow?.postMessage(
-      { type: CLEAR_SELECTION },
-      window.location.origin,
-    );
-  }
-
   const iframeSrc = `/iframe/product?hash_code=${encodeURIComponent(hashCode)}`;
 
   return (
@@ -62,11 +52,13 @@ export function ProductListMobile({ hashCode }: ProductListViewProps) {
         title="Product list"
         className="h-full w-full flex-1 border-0"
       />
-      <ProductDetailSheet
-        payload={selected}
-        onClose={handleClose}
-        onBuy={handleBuy}
-      />
+      {selected && (
+        <MobilePurchaseBar
+          price={selected.productPrice}
+          itemInfoName={selected.itemInfoName}
+          onBuy={handleBuy}
+        />
+      )}
     </div>
   );
 }
