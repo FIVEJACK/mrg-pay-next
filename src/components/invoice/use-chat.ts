@@ -90,7 +90,7 @@ export function useChat({ orderId, buyerId, sellerId, buyerName, paidAt }: UseCh
     });
   }, []);
 
-  const { ready, historyLoading, publish, sendFile } = usePubNubChat({
+  const { ready, historyLoading, publish, sendFile, updateMetadata } = usePubNubChat({
     token,
     channel: `non_order_partnership_${orderId}_${buyerId}_${sellerId}`,
     buyerId,
@@ -119,6 +119,12 @@ export function useChat({ orderId, buyerId, sellerId, buyerName, paidAt }: UseCh
     });
     try {
       await publish(html, id);
+      // Best-effort stamp of the channel's last-message preview so the
+      // seller-side inbox reflects this send. Not awaited: a failure here
+      // must not roll back the already-published message.
+      updateMetadata(text, false).catch((err) => {
+        console.warn("[chat] channel metadata update failed:", err);
+      });
     } catch (err) {
       // Roll back the optimistic bubble on failure; restore the failed text
       // unless the user has already typed something new.
@@ -157,6 +163,9 @@ export function useChat({ orderId, buyerId, sellerId, buyerName, paidAt }: UseCh
     });
     try {
       await sendFile(file, id);
+      updateMetadata("", true).catch((err) => {
+        console.warn("[chat] channel metadata update failed:", err);
+      });
     } catch (err) {
       setMessages((prev) => prev.filter((m) => m.id !== id));
       URL.revokeObjectURL(previewUrl);

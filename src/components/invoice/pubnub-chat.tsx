@@ -47,6 +47,11 @@ type UsePubNubChatResult = {
    * `localId` rides in `meta` for the same optimistic dedupe as {@link publish}.
    */
   sendFile: (file: File, localId?: string) => Promise<void>;
+  /**
+   * Stamp the channel's `custom.last_message_text` / `custom.with_file` so the
+   * seller-side inbox preview and sort reflect this conversation's latest send.
+   */
+  updateMetadata: (text: string, hasFile: boolean) => Promise<void>;
 };
 
 /**
@@ -190,7 +195,24 @@ export function usePubNubChat({
     [sendWithReauth],
   );
 
-  return { ready, historyLoading, publish, sendFile };
+  const updateMetadata = useCallback(
+    async (text: string, hasFile: boolean) => {
+      const ch = channelRef.current;
+      if (!ch) return;
+      await sendWithReauth(() =>
+        ch.update({
+          custom: {
+            ...ch.custom,
+            last_message_text: text,
+            with_file: hasFile,
+          },
+        }),
+      );
+    },
+    [sendWithReauth],
+  );
+
+  return { ready, historyLoading, publish, sendFile, updateMetadata };
 }
 
 function isPubNubAccessDenied(err: unknown): boolean {
