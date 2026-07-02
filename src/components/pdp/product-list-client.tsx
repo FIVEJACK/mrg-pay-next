@@ -316,7 +316,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
         ) : (
           <p className="animate-fade-in text-base text-(--color-text-body)">
             <span className="font-bold">{totalItem.toLocaleString("en-US")}</span>{" "}
-            products from our trusted partners
+            produk dari partner pilihan kami
           </p>
         )}
       </div>

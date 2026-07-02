@@ -8,8 +8,8 @@ export function formatPriceIDR(value: number | string | null | undefined) {
 export function formatSoldCount(value: number | string | null | undefined) {
   if (value === null || value === undefined || value === "") return "0 sold";
   const num = typeof value === "string" ? Number(value) : value;
-  if (!Number.isFinite(num)) return "0 sold";
-  return `${num.toLocaleString("en-US")} sold`;
+  if (!Number.isFinite(num)) return "0 terjual";
+  return `${num.toLocaleString("en-US")} terjual`;
 }
 
 export function computeDiscountPct(

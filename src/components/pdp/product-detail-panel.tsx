@@ -155,7 +155,7 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
             Deskripsi
           </TabButton>
           <TabButton active={tab === "how-to"} onClick={() => setTab("how-to")}>
-            Cara {itemTypeName || "Transaksi"}
+            Cara Transaksi
           </TabButton>
         </div>
       </div>
