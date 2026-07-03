@@ -35,15 +35,23 @@ function MrgImageBase({ src, className, fill, unoptimized, quality, ...props }: 
   const isLoaded = loadedKey === key;
   const done = () => setLoadedKey(key);
 
-  const skeleton = isLoaded ? null : (
-    <span aria-hidden="true" className="absolute inset-0 z-10 animate-pulse bg-(--color-bg-subtle)" />
+  // Cross-fade the skeleton out and the image in instead of an abrupt swap —
+  // an instant unmount of the pulsing skeleton reads as a glitch/pop, especially
+  // right after a modal/sheet-open transition.
+  const skeleton = (
+    <span
+      aria-hidden="true"
+      className={`pointer-events-none absolute inset-0 z-10 bg-(--color-bg-subtle) transition-opacity duration-300 ${
+        isLoaded ? "opacity-0" : "animate-pulse opacity-100"
+      }`}
+    />
   );
 
   const image = (
     <NextImage
       src={resolved}
       fill={fill}
-      className={className}
+      className={`${className ?? ""} transition-opacity duration-300 ${isLoaded ? "opacity-100" : "opacity-0"}`}
       quality={quality ?? 75}
       unoptimized={unoptimized ?? !isOptimizableHost(resolved)}
       {...props}

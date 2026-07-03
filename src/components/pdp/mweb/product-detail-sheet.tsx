@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { MrgImage } from "@/components/shared/mrg-image";
 import { computeDiscountPct, formatPriceIDR } from "@/lib/format";
 import { pickProductCoverImage } from "@/lib/partner-api";
 import type { Product } from "@/lib/partner-api";
@@ -128,14 +128,14 @@ export function ProductDetailSheet({ product, onClose }: ProductDetailSheetProps
           {/* Image carousel */}
           <div className="relative aspect-video w-full bg-(--color-surface-secondary)">
             {allImages.length > 0 ? (
-              <Image
+              <MrgImage
                 key={allImages[imgIndex]}
                 src={allImages[imgIndex] ?? ""}
                 alt={p?.name ?? ""}
                 fill
                 sizes="480px"
                 className="object-cover"
-                unoptimized
+                preload={imgIndex === 0}
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-xs text-(--color-text-subdued)">

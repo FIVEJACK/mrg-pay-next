@@ -131,11 +131,13 @@ export function ProductDetailPanel({ product, hashCode, onClose }: ProductDetail
       <div className="relative aspect-[210/118] w-full shrink-0 bg-(--color-surface-secondary)">
         {cover ? (
           <MrgImage
+            key={cover}
             src={cover}
             alt={product.name}
             fill
             sizes="380px"
             className="object-cover"
+            preload={imageIndex === 0}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs text-(--color-text-subdued)">
