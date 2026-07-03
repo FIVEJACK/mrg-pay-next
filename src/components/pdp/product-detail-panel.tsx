@@ -1,24 +1,44 @@
 "use client";
 
+import { HtmlContent } from "@/components/shared/html-content";
 import { MrgImage } from "@/components/shared/mrg-image";
 import { useEffect, useState } from "react";
 
 import { computeDiscountPct, formatPriceIDR } from "@/lib/format";
 import type { Product } from "@/lib/partner-api";
 import { pickProductCoverImage } from "@/lib/partner-api";
+import { partnerBrowserApi } from "@/lib/partner-api/browser-client";
 
 type Tab = "description" | "how-to";
 
+// The how-to article is shared by every product under the same item type, so
+// cache article bodies by item_type_id — reopening the panel for another
+// product in the same item type reuses it instead of re-fetching. Keyed by
+// item_type_id (not the faq id itself) since that's the field the product
+// list is actually filtered/grouped by.
+const howToArticleCache = new Map<number, string>();
+
+// The zendesk proxy returns the article body HTML-entity-escaped (e.g. "&lt;p&gt;")
+// rather than raw markup, so decode it once before handing it to HtmlContent —
+// otherwise the tags render as visible text instead of formatted content.
+function decodeHtmlEntities(html: string): string {
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = html;
+  return textarea.value;
+}
+
 type ProductDetailPanelProps = {
   product: Product;
+  hashCode: string;
   onClose: () => void;
 };
 
-export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps) {
+export function ProductDetailPanel({ product, hashCode, onClose }: ProductDetailPanelProps) {
   const [tab, setTab] = useState<Tab>("description");
   const [imageIndex, setImageIndex] = useState(0);
 
   useEffect(() => { if (imageIndex !== 0) setImageIndex(0); }, [product.id]);
+  useEffect(() => { if (tab !== "description") setTab("description"); }, [product.id]);
 
   const allImages: string[] = [];
   for (const img of product.images ?? []) {
@@ -34,15 +54,58 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
   // competitor_price = normal/reference price; price = (potentially discounted) selling price.
   const normalPrice = product.competitor_price ?? null;
   const discount = computeDiscountPct(product.seller_price, normalPrice);
-  const itemTypeName = product.item_type?.name ?? "";
   const description = ((product as Product & { description?: string }).description ?? "")
     .replace(/<[^>]*>/g, "")
     .trim();
+  const howToTradeFaqId = (product.item_type as { how_to_trade_faq_id?: string } | undefined)?.how_to_trade_faq_id;
+
+  const itemTypeId = product.item_type_id;
+
+  const [howToArticle, setHowToArticle] = useState<{ itemTypeId: number; body: string } | null>(null);
+  const [howToLoading, setHowToLoading] = useState(false);
+  const [howToError, setHowToError] = useState(false);
+
+  useEffect(() => {
+    if (tab !== "how-to" || !howToTradeFaqId || itemTypeId === undefined) return;
+    if (howToArticle?.itemTypeId === itemTypeId) return;
+
+    const cached = howToArticleCache.get(itemTypeId);
+    if (cached !== undefined) {
+      setHowToArticle({ itemTypeId, body: cached });
+      setHowToError(false);
+      return;
+    }
+
+    const ctrl = new AbortController();
+    let cancelled = false;
+    async function loadHowToArticle() {
+      setHowToLoading(true);
+      setHowToError(false);
+      try {
+        const res = await partnerBrowserApi.getZendeskArticle(howToTradeFaqId as string, {
+          hashCode,
+          signal: ctrl.signal,
+        });
+        const body = decodeHtmlEntities(res.article?.body ?? "");
+        howToArticleCache.set(itemTypeId as number, body);
+        if (!cancelled) setHowToArticle({ itemTypeId: itemTypeId as number, body });
+      } catch {
+        if (!cancelled) setHowToError(true);
+      } finally {
+        if (!cancelled) setHowToLoading(false);
+      }
+    }
+    loadHowToArticle();
+    return () => {
+      cancelled = true;
+      ctrl.abort();
+    };
+  }, [tab, howToTradeFaqId, itemTypeId, howToArticle?.itemTypeId, hashCode]);
 
   return (
     <aside
       aria-label="Product detail"
-      className="animate-slide-in-right sticky top-20 flex h-[700px] w-[380px] shrink-0 flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.08)]"
+      className="animate-slide-in-right sticky top-4 flex h-[700px] w-[380px] shrink-0 flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.08)]"
     >
       <div className="flex shrink-0 items-center justify-between px-4 py-3">
         <h3 className="font-[family-name:var(--font-heading)] text-base font-bold text-(--color-text-title)">
@@ -167,10 +230,15 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
           ) : (
             <p className="whitespace-pre-wrap leading-6">There is no description available for this product.</p>
           )
+        ) : howToLoading ? (
+          <p className="leading-6 text-(--color-text-subdued)">Memuat...</p>
+        ) : howToTradeFaqId && !howToError && howToArticle && product.item_type_id === itemTypeId ? (
+          <HtmlContent
+            data={howToArticle.body}
+            className="leading-6 [&_img]:max-w-full [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1 [&_li]:pl-1 [&_p]:mb-3 [&_strong]:font-bold [&_b]:font-bold [&_a]:text-(--color-brand) [&_a]:underline"
+          />
         ) : (
-          <p className="leading-6">
-            How to complete the transaction will appear here. (Cara {itemTypeName || "transaksi"})
-          </p>
+          <p className="leading-6">There is no transaction guidance available for this product.</p>
         )}
       </div>
     </aside>

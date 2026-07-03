@@ -71,13 +71,11 @@ export function ProductListClient({
 }: Props) {
   const [activeItemTypeId, setActiveItemTypeId] = useState(initialItemTypeId);
   const [filters, setFilters] = useState<Filters>(initialFilters);
-
   const [detail, setDetail] = useState<GameInfoDetailData | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
-
   const [productList, setProductList] = useState<ProductListData | null>(null);
   const [productsLoading, setProductsLoading] = useState(true);
-const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const activeItemType = itemTypes.find((t) => t.id === activeItemTypeId);
 
@@ -352,6 +350,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
         {!mobile && selectedProduct && (
           <ProductDetailPanel
             product={selectedProduct}
+            hashCode={hashCode}
             onClose={() => setSelectedProduct(null)}
           />
         )}

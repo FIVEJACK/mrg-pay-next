@@ -30,4 +30,6 @@ export type {
   Server,
   TransactionDetail,
   TransactionDetailOrder,
+  ZendeskArticle,
+  ZendeskArticleResponse,
 } from "./types";
