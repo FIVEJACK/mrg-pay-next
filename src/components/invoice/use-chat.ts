@@ -90,13 +90,36 @@ export function useChat({ orderId, buyerId, sellerId, buyerName, paidAt }: UseCh
     });
   }, []);
 
+  const conversationId = `non_order_partnership_${orderId}_${buyerId}_${sellerId}`;
   const { ready, historyLoading, publish, sendFile, updateMetadata } = usePubNubChat({
     token,
-    channel: `non_order_partnership_${orderId}_${buyerId}_${sellerId}`,
+    channel: conversationId,
     buyerId,
     onMessage: handleIncoming,
     refreshToken: refreshChatToken,
   });
+
+  // Best-effort server postprocess hook. Fired after a successful publish so
+  // the gateway can run notifications / moderation / indexing on the message.
+  // A missing timetoken (SDK didn't surface one) skips the call — the endpoint
+  // keys off it, so there's nothing useful to send.
+  const postprocess = useCallback(
+    (args: { text: string; files: string[]; timetoken: string }) => {
+      if (!args.timetoken) return;
+      partnerBrowserApi
+        .postprocessMessage({
+          text: args.text,
+          files: args.files,
+          chat_conversation_id: conversationId,
+          user_id: buyerId,
+          timetoken: args.timetoken,
+        })
+        .catch((err) => {
+          console.warn("[chat] postprocess message failed:", err);
+        });
+    },
+    [conversationId, buyerId],
+  );
 
   async function handleSend() {
     const text = draft.trim();
@@ -118,13 +141,14 @@ export function useChat({ orderId, buyerId, sellerId, buyerName, paidAt }: UseCh
       authoredByBuyer: true,
     });
     try {
-      await publish(html, id);
+      const timetoken = await publish(html, id);
       // Best-effort stamp of the channel's last-message preview so the
       // seller-side inbox reflects this send. Not awaited: a failure here
       // must not roll back the already-published message.
       updateMetadata(text, false).catch((err) => {
         console.warn("[chat] channel metadata update failed:", err);
       });
+      postprocess({ text, files: [], timetoken });
     } catch (err) {
       // Roll back the optimistic bubble on failure; restore the failed text
       // unless the user has already typed something new.
@@ -162,10 +186,11 @@ export function useChat({ orderId, buyerId, sellerId, buyerName, paidAt }: UseCh
       attachment: { url: previewUrl, name: file.name, mimeType: file.type, isImage: true },
     });
     try {
-      await sendFile(file, id);
+      const timetoken = await sendFile(file, id);
       updateMetadata("", true).catch((err) => {
         console.warn("[chat] channel metadata update failed:", err);
       });
+      postprocess({ text: "", files: [file.name], timetoken });
     } catch (err) {
       setMessages((prev) => prev.filter((m) => m.id !== id));
       URL.revokeObjectURL(previewUrl);

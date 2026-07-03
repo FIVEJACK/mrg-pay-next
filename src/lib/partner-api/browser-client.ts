@@ -146,10 +146,7 @@ export const partnerBrowserApi = {
       signal: opts?.signal,
     });
   },
-  getGameInfoDetail(
-    itemTypeId: number,
-    opts?: { gameId?: number; hashCode?: string; signal?: AbortSignal },
-  ) {
+  getGameInfoDetail(itemTypeId: number, opts?: { gameId?: number; hashCode?: string; signal?: AbortSignal }) {
     return request<GameInfoDetailData>("/v1/product/game-info/detail", {
       query: { item_type_id: itemTypeId, game_id: opts?.gameId },
       hashCode: opts?.hashCode,
@@ -180,10 +177,7 @@ export const partnerBrowserApi = {
       signal: opts?.signal,
     });
   },
-  createOrder(
-    body: CreateOrderBody,
-    opts?: { hashCode?: string; signal?: AbortSignal },
-  ) {
+  createOrder(body: CreateOrderBody, opts?: { hashCode?: string; signal?: AbortSignal }) {
     return request<CreateOrderResponse>("/v1/order", {
       method: "POST",
       body,
@@ -197,10 +191,7 @@ export const partnerBrowserApi = {
    * `Authorization: Bearer <jwt>`. The gateway also sets an httpOnly cookie
    * but ignores it for auth; the Authorization header is mandatory.
    */
-  async mintPartnerToken(
-    transaction_uuid: string,
-    opts?: { hashCode?: string; signal?: AbortSignal },
-  ) {
+  async mintPartnerToken(transaction_uuid: string, opts?: { hashCode?: string; signal?: AbortSignal }) {
     const res = await request<PartnerTokenResponse>("/v1/token", {
       method: "POST",
       body: { transaction_uuid },
@@ -229,14 +220,36 @@ export const partnerBrowserApi = {
     });
   },
   /**
+   * Server-side postprocess hook the gateway fires after a chat message is
+   * delivered (notifications, moderation, indexing). Best-effort — the
+   * message itself is already published to PubNub before this call runs.
+   */
+  postprocessMessage(
+    body: {
+      text: string;
+      files: string[];
+      chat_conversation_id: string;
+      user_id: string;
+      timetoken: string;
+    },
+    opts?: { signal?: AbortSignal },
+  ) {
+    console.log("postprocessMessage", body);
+    return request<unknown>("/v1/chat/message/postprocess", {
+      method: "POST",
+      body,
+      signal: opts?.signal,
+    });
+  },
+  /**
    * Public seller profile. The gateway double-wraps the payload as
    * `{ data: SellerInfo }` inside the envelope, so we unwrap it here.
    */
   async getSellerInfo(sellerId: number, opts?: { signal?: AbortSignal }) {
-    const res = await request<{ data?: SellerInfo } | SellerInfo>(
-      "/v1/seller-info",
-      { query: { seller_id: sellerId }, signal: opts?.signal },
-    );
+    const res = await request<{ data?: SellerInfo } | SellerInfo>("/v1/seller-info", {
+      query: { seller_id: sellerId },
+      signal: opts?.signal,
+    });
     return (res as { data?: SellerInfo }).data ?? (res as SellerInfo);
   },
 };
