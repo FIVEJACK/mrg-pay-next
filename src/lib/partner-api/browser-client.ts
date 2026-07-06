@@ -234,7 +234,6 @@ export const partnerBrowserApi = {
     },
     opts?: { signal?: AbortSignal },
   ) {
-    console.log("postprocessMessage", body);
     return request<unknown>("/v1/chat/message/postprocess", {
       method: "POST",
       body,
