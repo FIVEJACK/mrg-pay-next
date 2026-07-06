@@ -40,13 +40,15 @@ type UsePubNubChatResult = {
   /**
    * Publish a text message. `localId` is echoed back via the message `meta` so
    * an optimistic local bubble dedupes against the live broadcast loop-back.
+   * Resolves to the send timetoken (needed for the server postprocess hook).
    */
-  publish: (text: string, localId?: string) => Promise<void>;
+  publish: (text: string, localId?: string) => Promise<string>;
   /**
    * Upload + send an image as a PubNub file message via `Channel.sendText`.
    * `localId` rides in `meta` for the same optimistic dedupe as {@link publish}.
+   * Resolves to the send timetoken.
    */
-  sendFile: (file: File, localId?: string) => Promise<void>;
+  sendFile: (file: File, localId?: string) => Promise<string>;
   /**
    * Stamp the channel's `custom.last_message_text` / `custom.with_file` so the
    * seller-side inbox preview and sort reflect this conversation's latest send.
@@ -157,16 +159,16 @@ export function usePubNubChat({
     };
   }, [token, channel, buyerId, userId]);
 
-  const sendWithReauth = useCallback(async (send: () => Promise<unknown>) => {
+  const sendWithReauth = useCallback(async <T,>(send: () => Promise<T>): Promise<T> => {
     try {
-      await send();
+      return await send();
     } catch (err) {
       const refresh = refreshTokenRef.current;
       if (!refresh || !chatRef.current || !isPubNubAccessDenied(err)) throw err;
       const fresh = await refresh();
       tokenRef.current = fresh;
       chatRef.current.sdk.setToken(fresh);
-      await send();
+      return await send();
     }
   }, []);
 
@@ -174,9 +176,10 @@ export function usePubNubChat({
     async (text: string, localId?: string) => {
       const ch = channelRef.current;
       if (!ch) throw new Error("Chat is not connected yet.");
-      await sendWithReauth(() =>
+      const res = await sendWithReauth(() =>
         ch.sendText(text, localId ? { meta: { localId } } : undefined),
       );
+      return (res as { timetoken?: string })?.timetoken ?? "";
     },
     [sendWithReauth],
   );
@@ -185,12 +188,13 @@ export function usePubNubChat({
     async (file: File, localId?: string) => {
       const ch = channelRef.current;
       if (!ch) throw new Error("Chat is not connected yet.");
-      await sendWithReauth(() =>
+      const res = await sendWithReauth(() =>
         ch.sendText("", {
           files: [file],
           ...(localId ? { meta: { localId } } : {}),
         }),
       );
+      return (res as { timetoken?: string })?.timetoken ?? "";
     },
     [sendWithReauth],
   );
