@@ -15,6 +15,7 @@ import type {
   RequiredInfoField,
   SellerInfo,
   TransactionDetail,
+  ZendeskArticleResponse,
 } from "./index";
 import { PartnerApiError } from "./client";
 
@@ -250,6 +251,16 @@ export const partnerBrowserApi = {
       signal: opts?.signal,
     });
     return (res as { data?: SellerInfo }).data ?? (res as SellerInfo);
+  },
+  getZendeskArticle(
+    articleId: string | number,
+    opts?: { hashCode?: string; signal?: AbortSignal },
+  ) {
+    return request<ZendeskArticleResponse>("/v1/zendesk/api", {
+      query: { url_path: `/help_center/id/articles/${articleId}.json` },
+      hashCode: opts?.hashCode,
+      signal: opts?.signal,
+    });
   },
 };
 

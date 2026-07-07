@@ -1,19 +1,23 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { HtmlContent } from "@/components/shared/html-content";
+import { MrgImage } from "@/components/shared/mrg-image";
 import { computeDiscountPct, formatPriceIDR } from "@/lib/format";
 import { pickProductCoverImage } from "@/lib/partner-api";
 import type { Product } from "@/lib/partner-api";
 import type { ProductImage } from "@/lib/partner-api/types";
+
+import { useHowToTradeArticle } from "../use-how-to-trade-article";
 
 const CLOSE_DURATION = 320;
 type Tab = "description" | "how-to";
 
 type ProductDetailSheetProps = {
   product: Product | null;
+  hashCode: string;
   onClose: () => void;
 };
 
@@ -21,7 +25,7 @@ function getImageUrl(img: ProductImage): string | null {
   return img.image_url ?? img.horizontal_image_url ?? img.thumbnail_image_url ?? img.vertical_image_url ?? null;
 }
 
-export function ProductDetailSheet({ product, onClose }: ProductDetailSheetProps) {
+export function ProductDetailSheet({ product, hashCode, onClose }: ProductDetailSheetProps) {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
@@ -81,10 +85,16 @@ export function ProductDetailSheet({ product, onClose }: ProductDetailSheetProps
 
   const normalPrice = p?.competitor_price ?? null;
   const discount = p ? computeDiscountPct(p.seller_price, normalPrice) : null;
-  const itemTypeName = p?.item_type?.name ?? "";
   const description = (
     (p as (Product & { description?: string }) | null)?.description ?? ""
   ).replace(/<[^>]*>/g, "").trim();
+
+  const {
+    howToTradeFaqId,
+    article: howToArticle,
+    loading: howToLoading,
+    error: howToError,
+  } = useHowToTradeArticle(tab === "how-to", p, hashCode);
 
   if (!mounted || !visible) return null;
 
@@ -128,14 +138,14 @@ export function ProductDetailSheet({ product, onClose }: ProductDetailSheetProps
           {/* Image carousel */}
           <div className="relative aspect-video w-full bg-(--color-surface-secondary)">
             {allImages.length > 0 ? (
-              <Image
+              <MrgImage
                 key={allImages[imgIndex]}
                 src={allImages[imgIndex] ?? ""}
                 alt={p?.name ?? ""}
                 fill
                 sizes="480px"
                 className="object-cover"
-                unoptimized
+                preload={imgIndex === 0}
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-xs text-(--color-text-subdued)">
@@ -211,7 +221,7 @@ export function ProductDetailSheet({ product, onClose }: ProductDetailSheetProps
                   {(
                     [
                       { id: "description" as Tab, label: "Deskripsi" },
-                      { id: "how-to" as Tab, label: `Cara ${itemTypeName || "Transaksi"}` },
+                      { id: "how-to" as Tab, label: "Cara Transaksi" },
                     ] as const
                   ).map(({ id, label }) => (
                     <button
@@ -242,15 +252,20 @@ export function ProductDetailSheet({ product, onClose }: ProductDetailSheetProps
                   ) : (
                     <p className="overflow-hidden whitespace-pre-wrap break-words [overflow-wrap:anywhere]">There is no description available for this product.</p>
                   )
+                ) : howToLoading ? (
+                  <p className="leading-6 text-(--color-text-subdued)">Memuat...</p>
+                ) : howToTradeFaqId && !howToError && howToArticle ? (
+                  <HtmlContent
+                    data={howToArticle.body}
+                    className="leading-6 [&_img]:max-w-full [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1 [&_li]:pl-1 [&_p]:mb-3 [&_strong]:font-bold [&_b]:font-bold [&_a]:text-(--color-brand) [&_a]:underline"
+                  />
                 ) : (
-                  <p>Cara {itemTypeName || "transaksi"} akan muncul di sini.</p>
+                  <p className="leading-6">There is no transaction guidance available for this product.</p>
                 )}
               </div>
             </>
           )}
-
-          {/* Spacer so the last content clears the parent's fixed purchase bar. */}
-          <div aria-hidden="true" className="h-24" />
+          <div aria-hidden="true" className="h-[calc(9rem+env(safe-area-inset-bottom))]" />
         </div>
       </div>
     </div>,

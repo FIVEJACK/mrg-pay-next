@@ -74,6 +74,16 @@ export type GameInfoDetailData = {
   item_info_group: ItemInfoGroup[];
 };
 
+export type ZendeskArticle = {
+  id: number;
+  title: string;
+  body: string;
+};
+
+export type ZendeskArticleResponse = {
+  article: ZendeskArticle;
+};
+
 export type ProductImage = {
   image_url?: string | null;
   thumbnail_image_url?: string | null;

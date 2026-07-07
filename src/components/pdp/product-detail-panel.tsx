@@ -1,24 +1,26 @@
 "use client";
 
+import { HtmlContent } from "@/components/shared/html-content";
 import { MrgImage } from "@/components/shared/mrg-image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { computeDiscountPct, formatPriceIDR } from "@/lib/format";
 import type { Product } from "@/lib/partner-api";
 import { pickProductCoverImage } from "@/lib/partner-api";
 
+import { useHowToTradeArticle } from "./use-how-to-trade-article";
+
 type Tab = "description" | "how-to";
 
 type ProductDetailPanelProps = {
   product: Product;
+  hashCode: string;
   onClose: () => void;
 };
 
-export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps) {
+export function ProductDetailPanel({ product, hashCode, onClose }: ProductDetailPanelProps) {
   const [tab, setTab] = useState<Tab>("description");
   const [imageIndex, setImageIndex] = useState(0);
-
-  useEffect(() => { if (imageIndex !== 0) setImageIndex(0); }, [product.id]);
 
   const allImages: string[] = [];
   for (const img of product.images ?? []) {
@@ -34,15 +36,20 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
   // competitor_price = normal/reference price; price = (potentially discounted) selling price.
   const normalPrice = product.competitor_price ?? null;
   const discount = computeDiscountPct(product.seller_price, normalPrice);
-  const itemTypeName = product.item_type?.name ?? "";
   const description = ((product as Product & { description?: string }).description ?? "")
     .replace(/<[^>]*>/g, "")
     .trim();
+  const {
+    howToTradeFaqId,
+    article: howToArticle,
+    loading: howToLoading,
+    error: howToError,
+  } = useHowToTradeArticle(tab === "how-to", product, hashCode);
 
   return (
     <aside
       aria-label="Product detail"
-      className="animate-slide-in-right sticky top-20 flex h-[700px] w-[380px] shrink-0 flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.08)]"
+      className="animate-slide-in-right sticky top-4 flex h-[700px] w-[380px] shrink-0 flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.08)]"
     >
       <div className="flex shrink-0 items-center justify-between px-4 py-3">
         <h3 className="font-[family-name:var(--font-heading)] text-base font-bold text-(--color-text-title)">
@@ -68,11 +75,13 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
       <div className="relative aspect-[210/118] w-full shrink-0 bg-(--color-surface-secondary)">
         {cover ? (
           <MrgImage
+            key={cover}
             src={cover}
             alt={product.name}
             fill
             sizes="380px"
             className="object-cover"
+            preload={imageIndex === 0}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs text-(--color-text-subdued)">
@@ -167,10 +176,15 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
           ) : (
             <p className="whitespace-pre-wrap leading-6">There is no description available for this product.</p>
           )
+        ) : howToLoading ? (
+          <p className="leading-6 text-(--color-text-subdued)">Memuat...</p>
+        ) : howToTradeFaqId && !howToError && howToArticle ? (
+          <HtmlContent
+            data={howToArticle.body}
+            className="leading-6 [&_img]:max-w-full [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1 [&_li]:pl-1 [&_p]:mb-3 [&_strong]:font-bold [&_b]:font-bold [&_a]:text-(--color-brand) [&_a]:underline"
+          />
         ) : (
-          <p className="leading-6">
-            How to complete the transaction will appear here. (Cara {itemTypeName || "transaksi"})
-          </p>
+          <p className="leading-6">There is no transaction guidance available for this product.</p>
         )}
       </div>
     </aside>

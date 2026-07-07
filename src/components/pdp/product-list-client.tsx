@@ -71,13 +71,11 @@ export function ProductListClient({
 }: Props) {
   const [activeItemTypeId, setActiveItemTypeId] = useState(initialItemTypeId);
   const [filters, setFilters] = useState<Filters>(initialFilters);
-
   const [detail, setDetail] = useState<GameInfoDetailData | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
-
   const [productList, setProductList] = useState<ProductListData | null>(null);
   const [productsLoading, setProductsLoading] = useState(true);
-const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const activeItemType = itemTypes.find((t) => t.id === activeItemTypeId);
 
@@ -246,7 +244,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   return (
     <>
       <div className="mt-6 border-b border-(--color-border-low)">
-        <div role="tablist" className="flex gap-4 overflow-x-auto">
+        <div role="tablist" className="flex gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {itemTypes.map((t) => {
             const active = t.id === activeItemTypeId;
             return (
@@ -351,7 +349,9 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
         {!mobile && selectedProduct && (
           <ProductDetailPanel
+            key={selectedProduct.id}
             product={selectedProduct}
+            hashCode={hashCode}
             onClose={() => setSelectedProduct(null)}
           />
         )}
@@ -365,6 +365,7 @@ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
       {mobile && (
         <ProductDetailSheet
           product={selectedProduct}
+          hashCode={hashCode}
           onClose={() => setSelectedProduct(null)}
         />
       )}

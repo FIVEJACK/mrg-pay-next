@@ -149,12 +149,11 @@ export function humanizeKey(key: string) {
 }
 
 export const SORT_OPTIONS: Array<{ value: NonNullable<ProductListQuery["sort"]>; label: string }> = [
-  { value: "popular", label: "Produk Terpopuler" },
-  { value: "cheap", label: "Harga: Rendah ke Tinggi" },
-  { value: "expensive", label: "Harga: Tinggi ke Rendah" },
+  { value: "popular", label: "Produk populer" },
+  { value: "cheap", label: "Harga termurah" },
+  { value: "expensive", label: "Harga termahal" },
   { value: "shop_rating", label: "Terlaris" },
-  { value: "latest", label: "Terbaru" },
-  { value: "fastest_delivery", label: "Pengiriman Tercepat" },
+  { value: "latest", label: "Baru" },
 ];
 
 const TRIGGER_BASE =
@@ -616,7 +615,7 @@ export function FilterBar({
             className={`${TRIGGER_BASE} w-[220px] shrink-0 ${open ? "border-(--color-brand)" : ""}`}
           >
             <span className="truncate">
-              {`Sort: ${SORT_OPTIONS.find((o) => o.value === sort)?.label ?? sort}`}
+              {`Urutkan: ${SORT_OPTIONS.find((o) => o.value === sort)?.label ?? sort}`}
             </span>
             <ChevronDownIcon
               className={`size-5 shrink-0 text-(--color-text-subdued) transition-transform duration-200 ease-out ${
