@@ -16,7 +16,6 @@ export function useInvoice({ transactionUuid }: InvoiceViewProps) {
   const [transaction, setTransaction] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userIdLabel, setUserIdLabel] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,20 +44,6 @@ export function useInvoice({ transactionUuid }: InvoiceViewProps) {
           "Transaction Number": detail.transaction_number ?? null,
           "Order Number": order?.order_number ?? null,
         });
-
-        const gameId = detail.orders?.[0]?.game_id;
-        if (gameId) {
-          partnerBrowserApi
-            .getGameInfo(gameId, { signal: controller.signal })
-            .then((info) => {
-              if (cancelled) return;
-              const label = info?.game?.nickname?.trim();
-              if (label) setUserIdLabel(label);
-            })
-            .catch(() => {
-              /* ignore — keep default label */
-            });
-        }
       } catch (err: unknown) {
         if ((err as { name?: string })?.name === "AbortError") return;
         if (cancelled) return;
@@ -84,7 +69,7 @@ export function useInvoice({ transactionUuid }: InvoiceViewProps) {
     ? String(transaction.buyer_id ?? `buyer-${transaction.id}`)
     : "";
 
-  return { transaction, loading, error, state, order, buyerId, userIdLabel };
+  return { transaction, loading, error, state, order, buyerId };
 }
 
 function deriveState(tx: TransactionDetail): InvoiceState {

@@ -23,7 +23,7 @@ export function InvoiceDesktop(props: InvoiceViewProps) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_506px] lg:gap-x-8">
         <div className="flex flex-col gap-6">
           <TransactionStatusCard state={state} transaction={transaction} />
-          {state === "on_process" && order && order.seller_id != null && (
+          {(state === "on_process" || state === "completed") && order && order.seller_id != null && (
             <ChatPanel
               orderId={order.id}
               buyerId={buyerId}

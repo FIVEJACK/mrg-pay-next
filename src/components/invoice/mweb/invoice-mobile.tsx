@@ -16,7 +16,10 @@ export function InvoiceMobile(props: InvoiceViewProps) {
     return <ErrorShell message={error ?? "Transaksi tidak ditemukan."} />;
   }
 
-  const showChat = state === "on_process" && order != null && order.seller_id != null;
+  const showChat =
+    (state === "on_process" || state === "completed") &&
+    order != null &&
+    order.seller_id != null;
 
   return (
     <div className="mx-auto flex w-full max-w-[640px] flex-col gap-2">
