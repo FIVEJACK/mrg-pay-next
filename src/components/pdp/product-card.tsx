@@ -25,7 +25,7 @@ export function ProductCard({ product, selected, mobile, onClick }: ProductCardP
       aria-pressed={selected}
       className={`group flex flex-col overflow-hidden rounded-2xl border bg-white text-left transition duration-200 ease-out outline-none will-change-transform hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(17,17,168,0.10)] ${
         selected
-          ? "border-2 border-(--color-brand) shadow-[0_0_0_2px_var(--color-brand)]"
+          ? "border-2 border-(--color-brand) shadow-(--color-brand)"
           : "border-(--color-border) hover:border-(--color-brand)"
       }`}
     >

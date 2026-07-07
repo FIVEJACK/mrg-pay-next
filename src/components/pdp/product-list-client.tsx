@@ -244,7 +244,7 @@ export function ProductListClient({
   return (
     <>
       <div className="mt-6 border-b border-(--color-border-low)">
-        <div role="tablist" className="flex gap-4 overflow-x-auto">
+        <div role="tablist" className="flex gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {itemTypes.map((t) => {
             const active = t.id === activeItemTypeId;
             return (
@@ -349,6 +349,7 @@ export function ProductListClient({
 
         {!mobile && selectedProduct && (
           <ProductDetailPanel
+            key={selectedProduct.id}
             product={selectedProduct}
             hashCode={hashCode}
             onClose={() => setSelectedProduct(null)}
@@ -364,6 +365,7 @@ export function ProductListClient({
       {mobile && (
         <ProductDetailSheet
           product={selectedProduct}
+          hashCode={hashCode}
           onClose={() => setSelectedProduct(null)}
         />
       )}
