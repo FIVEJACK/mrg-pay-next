@@ -94,9 +94,6 @@ export function BottomSheet({ renderTrigger, renderContent }: BottomSheetProps) 
               <div className="flex justify-center py-3" aria-hidden="true">
                 <div className="h-1 w-10 rounded-full bg-(--color-border)" />
               </div>
-              {/* Content — a single-row grid stretches the child to a definite full
-                  height (no fragile percentage-height chain), so the popover's
-                  sticky footer is always laid out and visible. */}
               <div className="grid min-h-0 grid-rows-1 overflow-hidden">
                 {renderContent({ close })}
               </div>

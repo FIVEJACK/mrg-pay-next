@@ -100,7 +100,9 @@ export function RangeFilterPopover({
       )}
       {/* Body */}
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-        <p className="mb-3 text-sm font-bold text-(--color-text-title)">{sectionLabel}</p>
+        {sectionLabel !== title && (
+          <p className="mb-3 text-sm font-bold text-(--color-text-title)">{sectionLabel}</p>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
             <label className="text-xs text-(--color-text-subdued)">Minimum</label>
