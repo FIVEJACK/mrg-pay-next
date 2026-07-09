@@ -1,4 +1,3 @@
-import { Breadcrumb } from "@/components/pdp/breadcrumb";
 import { GameHeader } from "@/components/pdp/game-header";
 import { HeroBackground } from "@/components/pdp/hero-background";
 import { ProductListClient } from "@/components/pdp/product-list-client";
@@ -40,7 +39,7 @@ export default async function ProductIframePage({ searchParams }: PageProps) {
   if (!scope) return <MissingHashState />;
   const gameId = scope.game_id;
 
-  // Fetch in parallel — game-info populates the breadcrumb/header/tabs, and
+  // Fetch in parallel — game-info populates the header/tabs, and
   // the attribute config drives the b2b2c filter UI.
   const [gameInfo, attributes, mobile]: [GameInfoData | null, B2b2cAttribute[] | null, boolean] =
     await Promise.all([
@@ -92,11 +91,7 @@ export default async function ProductIframePage({ searchParams }: PageProps) {
       <HeroBackground />
 
       <div className="mx-auto w-full max-w-[1440px] px-6 py-10 lg:px-[116px]">
-        <Breadcrumb items={[{ label: "Home", href: "/", target: "_parent" }, { label: gameName }]} />
-
-        <div className="mt-6">
-          <GameHeader name={gameName} logoUrl={pickGameLogo(gameInfo?.game)} />
-        </div>
+        <GameHeader name={gameName} logoUrl={pickGameLogo(gameInfo?.game)} />
 
         <ProductListClient
           hashCode={hashCode}

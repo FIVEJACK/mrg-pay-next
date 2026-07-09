@@ -78,16 +78,6 @@ export function FilterBarMobileSkeleton() {
   );
 }
 
-export function BreadcrumbSkeleton() {
-  return (
-    <div className="flex items-center gap-2 py-1">
-      <Skeleton className="h-4 w-10" />
-      <span className="text-(--color-text-secondary)">/</span>
-      <Skeleton className="h-4 w-24" />
-    </div>
-  );
-}
-
 export function ResultsCountSkeleton() {
   return <Skeleton className="h-6 w-72" />;
 }
