@@ -8,8 +8,8 @@ import type { Product } from "@/lib/partner-api";
  * so the wire format stays in sync.
  */
 
-export const PRODUCT_SELECTED = "lg:product-selected" as const;
-export const PRODUCT_DESELECTED = "lg:product-deselected" as const;
+export const PRODUCT_SELECTED = "mrg:product-selected" as const;
+export const PRODUCT_DESELECTED = "mrg:product-deselected" as const;
 
 export type ProductSelectedPayload = {
   productId: number;
