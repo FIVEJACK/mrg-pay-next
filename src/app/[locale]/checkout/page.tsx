@@ -40,7 +40,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
   const product = await safeCall(() =>
     partnerApi.getProductDetail(productId, { hashCode }),
   );
-  if (!product) {
+  if (!product?.id) {
     return (
       <CheckoutShell>
         <ErrorState title="Produk tidak ditemukan">
