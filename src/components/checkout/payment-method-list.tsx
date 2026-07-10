@@ -191,7 +191,7 @@ function PaymentCard({
       disabled={disabled}
       title={disabled ? formatLimitViolation(violation) : undefined}
       onClick={onSelect}
-      className={`flex h-[68px] min-w-0 items-center gap-3 rounded-2xl px-6 py-4 text-left transition ${
+      className={`flex min-h-[68px] min-w-0 flex-col justify-center gap-1 rounded-2xl px-6 py-4 text-left transition ${
         disabled
           ? "cursor-not-allowed border border-(--color-border-low) bg-white"
           : selected
@@ -199,21 +199,14 @@ function PaymentCard({
             : "border border-(--color-border-low) bg-white hover:border-(--color-border)"
       }`}
     >
-      <PaymentLogoChip method={method} />
-      <span className="flex min-w-0 flex-1 items-center gap-3">
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span
-            className={`truncate font-[family-name:var(--font-heading)] text-base leading-6 ${
-              disabled ? "text-(--color-text-disabled)" : "text-(--color-text-secondary)"
-            }`}
-          >
-            {method.name}
-          </span>
-          {disabled && (
-            <span className="truncate text-sm leading-5 text-(--color-promotion)">
-              {formatLimitViolation(violation)}
-            </span>
-          )}
+      <span className="flex min-w-0 items-center gap-3">
+        <PaymentLogoChip method={method} />
+        <span
+          className={`truncate min-w-0 flex-1 font-[family-name:var(--font-heading)] text-base leading-6 ${
+            disabled ? "text-(--color-text-disabled)" : "text-(--color-text-secondary)"
+          }`}
+        >
+          {method.name}
         </span>
         <span
           className={`ml-auto whitespace-nowrap font-[family-name:var(--font-heading)] text-sm leading-6 ${
@@ -239,6 +232,11 @@ function PaymentCard({
           </span>
         )}
       </span>
+      {disabled && (
+        <span className="pl-[68px] text-sm leading-5 text-(--color-promotion)">
+          {formatLimitViolation(violation)}
+        </span>
+      )}
     </button>
   );
 }

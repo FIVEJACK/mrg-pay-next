@@ -270,7 +270,7 @@ function ModalPaymentCard({
       disabled={disabled}
       title={limitLabel ?? undefined}
       onClick={onSelect}
-      className={`flex h-[68px] min-w-0 items-center gap-3 rounded-2xl px-4 py-3 text-left transition ${
+      className={`flex min-h-[68px] min-w-0 flex-col justify-center gap-1 rounded-2xl px-4 py-3 text-left transition ${
         disabled
           ? "cursor-not-allowed border border-(--color-border-low) bg-white"
           : selected
@@ -278,40 +278,40 @@ function ModalPaymentCard({
             : "border border-(--color-border-low) bg-white hover:border-(--color-border)"
       }`}
     >
-      {method.media_url ? (
-        <MrgImage
-          src={method.media_url}
-          alt=""
-          width={56}
-          height={32}
-          className="h-8 w-14 shrink-0 object-contain"
-        />
-      ) : (
-        <span className="flex h-8 w-14 shrink-0 items-center justify-center rounded-sm bg-(--color-bg-subtle) text-[11px] font-bold leading-none text-(--color-text-secondary)">
-          {method.name.slice(0, 4).toUpperCase()}
-        </span>
-      )}
-      <span className="flex min-w-0 flex-1 flex-col">
+      <span className="flex min-w-0 items-center gap-3">
+        {method.media_url ? (
+          <MrgImage
+            src={method.media_url}
+            alt=""
+            width={56}
+            height={32}
+            className="h-8 w-14 shrink-0 object-contain"
+          />
+        ) : (
+          <span className="flex h-8 w-14 shrink-0 items-center justify-center rounded-sm bg-(--color-bg-subtle) text-[11px] font-bold leading-none text-(--color-text-secondary)">
+            {method.name.slice(0, 4).toUpperCase()}
+          </span>
+        )}
         <span
-          className={`truncate text-sm ${
+          className={`truncate min-w-0 flex-1 text-sm ${
             disabled ? "text-(--color-text-disabled)" : "text-(--color-text-body)"
           }`}
         >
           {method.name}
         </span>
-        {limitLabel && (
-          <span className="truncate text-xs leading-4 text-(--color-promotion)">
-            {limitLabel}
-          </span>
-        )}
+        <span
+          className={`shrink-0 text-sm ${
+            disabled ? "text-(--color-text-disabled)" : "text-(--color-text-body)"
+          }`}
+        >
+          {formatPriceIDR(price)}
+        </span>
       </span>
-      <span
-        className={`shrink-0 text-sm ${
-          disabled ? "text-(--color-text-disabled)" : "text-(--color-text-body)"
-        }`}
-      >
-        {formatPriceIDR(price)}
-      </span>
+      {limitLabel && (
+        <span className="pl-[68px] text-xs leading-4 text-(--color-promotion)">
+          {limitLabel}
+        </span>
+      )}
     </button>
   );
 }
