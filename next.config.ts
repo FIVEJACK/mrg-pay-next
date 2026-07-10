@@ -29,6 +29,7 @@ const cspDirectives: Record<string, Array<string | false>> = {
     isDev && "ws:",
   ],
   "frame-src": ["'self'"],
+  "frame-ancestors": ["'self'", "https://*.lapakgaming.com"],
   "base-uri": ["'self'"],
   "object-src": ["'none'"],
 };
