@@ -67,7 +67,7 @@ export function postProductSelection(
 
   if (!product) {
     const msg: ProductDeselectedMessage = { type: PRODUCT_DESELECTED };
-    window.parent.postMessage(msg, window.location.origin);
+    window.parent.postMessage(msg, '*');
     return;
   }
 
@@ -87,5 +87,5 @@ export function postProductSelection(
       product,
     },
   };
-  window.parent.postMessage(msg, window.location.origin);
+  window.parent.postMessage(msg, "*");
 }
