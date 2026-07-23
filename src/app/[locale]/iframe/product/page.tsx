@@ -1,4 +1,5 @@
 import { GameHeader } from "@/components/pdp/game-header";
+import { IframeHeightReporter } from "@/components/pdp/iframe-height-reporter";
 import { ProductListClient } from "@/components/pdp/product-list-client";
 import { VisitPageTracker } from "@/components/shared/visit-page-tracker";
 import { CLIENT_NAME, EVENT } from "@/lib/amplitude";
@@ -78,6 +79,8 @@ export default async function ProductIframePage({ searchParams }: PageProps) {
 
     return (
     <div className="relative" data-transparent-bg>
+      <IframeHeightReporter />
+
       <VisitPageTracker
         eventName={EVENT.VISIT_PRODUCT_CATALOGUE}
         properties={{

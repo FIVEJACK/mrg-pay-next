@@ -10,6 +10,7 @@ import type { Product } from "@/lib/partner-api";
 
 export const PRODUCT_SELECTED = "mrg:product-selected" as const;
 export const PRODUCT_DESELECTED = "mrg:product-deselected" as const;
+export const HEIGHT_CHANGED = "mrg:height-changed" as const;
 
 export type ProductSelectedPayload = {
   productId: number;
@@ -33,7 +34,15 @@ export type ProductDeselectedMessage = {
   type: typeof PRODUCT_DESELECTED;
 };
 
-export type ProductListMessage = ProductSelectedMessage | ProductDeselectedMessage;
+export type HeightChangedMessage = {
+  type: typeof HEIGHT_CHANGED;
+  payload: { height: number };
+};
+
+export type ProductListMessage =
+  | ProductSelectedMessage
+  | ProductDeselectedMessage
+  | HeightChangedMessage;
 
 /**
  * Type guard for inbound messages. Use this on the parent (`window.message`
@@ -43,7 +52,7 @@ export type ProductListMessage = ProductSelectedMessage | ProductDeselectedMessa
 export function isProductListMessage(value: unknown): value is ProductListMessage {
   if (typeof value !== "object" || value === null) return false;
   const v = value as { type?: unknown };
-  return v.type === PRODUCT_SELECTED || v.type === PRODUCT_DESELECTED;
+  return v.type === PRODUCT_SELECTED || v.type === PRODUCT_DESELECTED || v.type === HEIGHT_CHANGED;
 }
 
 type PostOptions = {
@@ -87,5 +96,19 @@ export function postProductSelection(
       product,
     },
   };
+  window.parent.postMessage(msg, "*");
+}
+
+/**
+ * Publish the iframe's current content height to the parent window so a host
+ * can size the frame to its content (avoiding a nested scrollbar). No-op when
+ * there is no parent (page opened directly).
+ */
+export function postHeightChange(height: number): void {
+  if (typeof window === "undefined") return;
+  if (window.parent === window) return;
+
+  const msg: HeightChangedMessage = { type: HEIGHT_CHANGED, payload: { height } };
+  console.log(msg);
   window.parent.postMessage(msg, "*");
 }
