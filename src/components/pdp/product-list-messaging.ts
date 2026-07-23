@@ -109,6 +109,5 @@ export function postHeightChange(height: number): void {
   if (window.parent === window) return;
 
   const msg: HeightChangedMessage = { type: HEIGHT_CHANGED, payload: { height } };
-  console.log(msg);
   window.parent.postMessage(msg, "*");
 }
