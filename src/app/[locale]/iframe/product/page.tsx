@@ -1,5 +1,4 @@
 import { GameHeader } from "@/components/pdp/game-header";
-import { HeroBackground } from "@/components/pdp/hero-background";
 import { ProductListClient } from "@/components/pdp/product-list-client";
 import { VisitPageTracker } from "@/components/shared/visit-page-tracker";
 import { CLIENT_NAME, EVENT } from "@/lib/amplitude";
@@ -88,7 +87,6 @@ export default async function ProductIframePage({ searchParams }: PageProps) {
           "Device Env": mobile ? "Mobile" : "Desktop",
         }}
       />
-      <HeroBackground />
 
       <div className="mx-auto w-full max-w-[1440px] px-6 py-10 lg:px-[116px]">
         <GameHeader name={gameName} logoUrl={pickGameLogo(gameInfo?.game)} />
