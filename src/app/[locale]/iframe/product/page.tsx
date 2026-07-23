@@ -78,7 +78,7 @@ export default async function ProductIframePage({ searchParams }: PageProps) {
   const itemTypeName = itemTypes.find((t) => t.id === initialItemTypeId)?.name ?? null;
 
     return (
-    <div className="relative">
+    <div className="relative" data-transparent-bg>
       <VisitPageTracker
         eventName={EVENT.VISIT_PRODUCT_CATALOGUE}
         properties={{

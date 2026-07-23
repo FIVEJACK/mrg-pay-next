@@ -46,6 +46,12 @@ body {
   font-family: var(--font-body), system-ui, -apple-system, sans-serif;
 }
 
+/* Transparent background for embedded iframe routes so the host page shows through. */
+html:has([data-transparent-bg]),
+body:has([data-transparent-bg]) {
+  background: transparent;
+}
+
 @keyframes lg-slide-in-right {
   from {
     opacity: 0;

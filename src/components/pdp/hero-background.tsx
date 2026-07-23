@@ -22,7 +22,6 @@ export function HeroBackground() {
         </defs>
         <rect width="100%" height="100%" fill="url(#hero-grid)" />
       </svg>
-      <div className="absolute inset-x-0 bottom-0 h-[200px] bg-gradient-to-b from-transparent to-white" />
     </div>
   );
 }
